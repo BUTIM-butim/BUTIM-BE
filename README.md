@@ -1,2 +1,2 @@
 # BUTIM-BE
-BUTIM backend
+버팀 BUTIM BE 레포지토리
