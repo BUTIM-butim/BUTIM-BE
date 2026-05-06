@@ -3,6 +3,7 @@ package com.example.butim.domain.auth.controller;
 import com.example.butim.domain.auth.dto.request.LoginRequest;
 import com.example.butim.domain.auth.dto.request.SignupRequest;
 import com.example.butim.domain.auth.dto.response.LoginResponse;
+import com.example.butim.domain.auth.dto.response.TokenResponse;
 import com.example.butim.domain.auth.service.AuthService;
 import com.example.butim.global.response.BaseResponse;
 import com.example.butim.global.security.CustomUserDetails;
@@ -54,7 +55,7 @@ public class AuthController {
 
     @Operation(summary = "토큰 갱신", description = "Refresh Token으로 새로운 Access Token과 Refresh Token을 발급받습니다. (Rotation 적용)")
     @PostMapping("/refresh")
-    public ResponseEntity<BaseResponse<LoginResponse>> refresh(@Valid @RequestBody RefreshRequest request) {
+    public ResponseEntity<BaseResponse<TokenResponse>> refresh(@Valid @RequestBody RefreshRequest request) {
         return ResponseEntity.ok(BaseResponse.success("토큰이 갱신되었습니다.", authService.refresh(request.getRefreshToken())));
     }
 

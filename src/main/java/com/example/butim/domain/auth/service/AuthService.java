@@ -3,6 +3,7 @@ package com.example.butim.domain.auth.service;
 import com.example.butim.domain.auth.dto.request.LoginRequest;
 import com.example.butim.domain.auth.dto.request.SignupRequest;
 import com.example.butim.domain.auth.dto.response.LoginResponse;
+import com.example.butim.domain.auth.dto.response.TokenResponse;
 import com.example.butim.domain.user.entity.User;
 import com.example.butim.domain.user.repository.UserRepository;
 import com.example.butim.global.exception.CustomException;
@@ -71,7 +72,7 @@ public class AuthService {
 
         redisTemplate.opsForValue().set(REFRESH_TOKEN_PREFIX + user.getId(), refreshToken, REFRESH_TOKEN_TTL);
 
-        return new LoginResponse(accessToken, refreshToken);
+        return new LoginResponse(accessToken, refreshToken, user.getName());
     }
 
     public void logout(Long userId, String accessToken) {
@@ -83,7 +84,7 @@ public class AuthService {
         }
     }
 
-    public LoginResponse refresh(String refreshToken) {
+    public TokenResponse refresh(String refreshToken) {
         jwtProvider.validate(refreshToken);
 
         Long userId = jwtProvider.getUserId(refreshToken);
@@ -98,7 +99,7 @@ public class AuthService {
 
         redisTemplate.opsForValue().set(REFRESH_TOKEN_PREFIX + userId, newRefreshToken, REFRESH_TOKEN_TTL);
 
-        return new LoginResponse(newAccessToken, newRefreshToken);
+        return new TokenResponse(newAccessToken, newRefreshToken);
     }
 
     @Transactional
