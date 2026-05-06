@@ -14,7 +14,10 @@ public class GlobalExceptionHandler {
         ErrorCode errorCode = e.getErrorCode();
         return ResponseEntity
                 .status(errorCode.getHttpStatus())
-                .body(BaseResponse.fail(errorCode.getCode(), errorCode.getMessage()));
+                .body(BaseResponse.fail(
+                        errorCode.getHttpStatus().value(),
+                        errorCode.getMessage()
+                ));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

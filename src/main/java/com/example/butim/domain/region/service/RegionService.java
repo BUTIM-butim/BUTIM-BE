@@ -5,6 +5,8 @@ import com.example.butim.domain.region.dto.SidoResponse;
 import com.example.butim.domain.region.dto.SigunguResponse;
 import com.example.butim.domain.region.entity.Region;
 import com.example.butim.domain.region.repository.RegionRepository;
+import com.example.butim.global.exception.CustomException;
+import com.example.butim.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +33,8 @@ public class RegionService {
 
     @Transactional(readOnly = true)
     public List<SigunguResponse> getSigunguList(String sidoCode) {
+        validateSidoCode(sidoCode);
+
         return regionRepository.findBySidoCodeAndSigunguCodeIsNotNullOrderBySigunguNameAsc(sidoCode)
                 .stream()
                 .map(region -> new SigunguResponse(
@@ -38,6 +42,18 @@ public class RegionService {
                         region.getSigunguName()
                 ))
                 .toList();
+    }
+
+    private void validateSidoCode(String sidoCode) {
+        if (sidoCode == null || sidoCode.isBlank()) {
+            throw new CustomException(ErrorCode.INVALID_SIDO_CODE);
+        }
+
+        boolean exists = regionRepository.existsBySidoCode(sidoCode);
+
+        if (!exists) {
+            throw new CustomException(ErrorCode.REGION_NOT_FOUND);
+        }
     }
 
     @Transactional
