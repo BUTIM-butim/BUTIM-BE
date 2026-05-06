@@ -21,6 +21,7 @@ import java.time.Duration;
 public class AuthService {
 
     private static final String REFRESH_TOKEN_PREFIX = "RT:";
+    private static final String BLACKLIST_PREFIX = "BL:";
     private static final Duration REFRESH_TOKEN_TTL = Duration.ofDays(7);
 
     private final UserRepository userRepository;
@@ -48,6 +49,8 @@ public class AuthService {
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .phoneNumber(request.getPhoneNumber())
+                .termsAgreed(request.getTermsAgreed())
+                .pushAlarmAgreed(request.getPushAlarmAgreed())
                 .build();
 
         userRepository.save(user);
@@ -71,8 +74,13 @@ public class AuthService {
         return new LoginResponse(accessToken, refreshToken);
     }
 
-    public void logout(Long userId) {
+    public void logout(Long userId, String accessToken) {
         redisTemplate.delete(REFRESH_TOKEN_PREFIX + userId);
+
+        long remaining = jwtProvider.getRemainingExpiration(accessToken);
+        if (remaining > 0) {
+            redisTemplate.opsForValue().set(BLACKLIST_PREFIX + accessToken, "logout", Duration.ofMillis(remaining));
+        }
     }
 
     public LoginResponse refresh(String refreshToken) {

@@ -17,6 +17,7 @@ import com.example.butim.domain.auth.dto.request.RefreshRequest;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -41,10 +42,13 @@ public class AuthController {
         return ResponseEntity.ok(BaseResponse.success("로그인에 성공했습니다.", authService.login(request)));
     }
 
-    @Operation(summary = "로그아웃", description = "로그아웃합니다. Redis의 Refresh Token을 삭제합니다. 인증 필요.")
+    @Operation(summary = "로그아웃", description = "로그아웃합니다. Refresh Token 삭제 및 Access Token 블랙리스트 등록. 인증 필요.")
     @PostMapping("/logout")
-    public ResponseEntity<BaseResponse<Void>> logout(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        authService.logout(userDetails.getUserId());
+    public ResponseEntity<BaseResponse<Void>> logout(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestHeader("Authorization") String authorization) {
+        String accessToken = authorization.substring(7);
+        authService.logout(userDetails.getUserId(), accessToken);
         return ResponseEntity.ok(BaseResponse.success("로그아웃되었습니다.", null));
     }
 

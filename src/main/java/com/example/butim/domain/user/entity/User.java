@@ -30,6 +30,12 @@ public class User extends BaseEntity {
     @Column(nullable = false, unique = true)
     private String phoneNumber;
 
+    @Column(nullable = false)
+    private boolean termsAgreed;
+
+    @Column(nullable = false)
+    private boolean pushAlarmAgreed;
+
     public void withdraw() {
         softDelete();
     }
