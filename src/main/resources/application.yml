@@ -17,3 +17,12 @@ spring:
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
+
+external:
+  industrial-accident:
+    base-url: https://apis.data.go.kr/B490001/SJBoheomYoyang
+    service-key: ${SERVICE_KEY}
+    page-no: 1
+    num-of-rows: 10000
+    industry-path: /OPA001MT_12_INFO
+    job-path: /OPA252MT_14_INFO
