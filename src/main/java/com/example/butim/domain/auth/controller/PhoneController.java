@@ -22,13 +22,13 @@ public class PhoneController {
 
     @PostMapping("/send")
     public ResponseEntity<BaseResponse<PhoneSendResponse>> send(@Valid @RequestBody PhoneSendRequest request) {
-        String code = phoneVerificationService.sendCode(request.phoneNumber());
+        String code = phoneVerificationService.sendCode(request.getPhoneNumber());
         return ResponseEntity.ok(BaseResponse.success("인증번호가 발송되었습니다.", new PhoneSendResponse(code)));
     }
 
     @PostMapping("/verify")
     public ResponseEntity<BaseResponse<Void>> verify(@Valid @RequestBody PhoneVerifyRequest request) {
-        phoneVerificationService.verifyCode(request.phoneNumber(), request.code());
+        phoneVerificationService.verifyCode(request.getPhoneNumber(), request.getCode());
         return ResponseEntity.ok(BaseResponse.success("인증이 완료되었습니다.", null));
     }
 }

@@ -10,6 +10,9 @@ public enum ErrorCode {
     SIDO_REQUIRED(HttpStatus.BAD_REQUEST, 400, "시/도 값이 필요합니다."),
     SIDO_NOT_FOUND(HttpStatus.NOT_FOUND, 404, "존재하지 않는 시/도입니다."),
 
+    // Common
+    INVALID_INPUT(HttpStatus.BAD_REQUEST, 400, "입력값이 올바르지 않습니다."),
+
     // Auth
     DUPLICATE_EMAIL(HttpStatus.CONFLICT, 409, "이미 사용 중인 이메일입니다."),
     DUPLICATE_PHONE(HttpStatus.CONFLICT, 409, "이미 사용 중인 전화번호입니다."),
