@@ -7,8 +7,8 @@ import org.springframework.http.HttpStatus;
 public enum ErrorCode {
 
     // Region
-    SIDO_REQUIRED(HttpStatus.BAD_REQUEST, 400, "시/도 값이 필요합니다."),
-    SIDO_NOT_FOUND(HttpStatus.NOT_FOUND, 404, "존재하지 않는 시/도입니다."),
+    INVALID_SIDO_CODE(HttpStatus.BAD_REQUEST, 400, "시도 코드는 필수입니다."),
+    REGION_NOT_FOUND(HttpStatus.NOT_FOUND, 404, "존재하지 않는 시도 코드입니다."),
 
     // Common
     INVALID_INPUT(HttpStatus.BAD_REQUEST, 400, "입력값이 올바르지 않습니다."),
@@ -28,16 +28,14 @@ public enum ErrorCode {
     WITHDRAWN_USER(HttpStatus.UNAUTHORIZED, 401, "탈퇴한 사용자입니다."),
 
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, 500, "서버 내부 오류가 발생했습니다.");
-    INVALID_SIDO_CODE(HttpStatus.BAD_REQUEST, "시도 코드는 필수입니다."),
-    REGION_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 시도 코드입니다."),
-
-    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다.");
 
     private final HttpStatus httpStatus;
+    private final int code;
     private final String message;
 
-    ErrorCode(HttpStatus httpStatus, String message) {
+    ErrorCode(HttpStatus httpStatus, int code, String message) {
         this.httpStatus = httpStatus;
+        this.code = code;
         this.message = message;
     }
 }
