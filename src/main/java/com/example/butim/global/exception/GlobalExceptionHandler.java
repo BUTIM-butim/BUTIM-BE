@@ -14,15 +14,19 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(errorCode.getHttpStatus())
-                .body(BaseResponse.fail(errorCode.getCode(), errorCode.getMessage()));
+                .body(BaseResponse.fail(
+                        errorCode.getHttpStatus().value(),
+                        errorCode.getMessage()
+                ));
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<BaseResponse<Void>> handleException(Exception e) {
-        ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
-
         return ResponseEntity
-                .status(errorCode.getHttpStatus())
-                .body(BaseResponse.fail(errorCode.getCode(), errorCode.getMessage()));
+                .status(ErrorCode.INTERNAL_SERVER_ERROR.getHttpStatus())
+                .body(BaseResponse.fail(
+                        ErrorCode.INTERNAL_SERVER_ERROR.getHttpStatus().value(),
+                        ErrorCode.INTERNAL_SERVER_ERROR.getMessage()
+                ));
     }
 }
