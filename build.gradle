@@ -41,6 +41,9 @@ dependencies {
     //CSV
     implementation 'com.opencsv:opencsv:5.9'
 
+    //XML
+    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml'
+
     // JWT
     implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'

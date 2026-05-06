@@ -52,6 +52,13 @@ public class SecurityConfig {
                                 "/api/auth/refresh",
                                 "/api/auth/phone/**"
                         ).permitAll()
+
+                        // 업종/직종 API Swagger 테스트용 허용
+                        .requestMatchers(
+                                "/api/industries/**",
+                                "/api/jobs/**"
+                        ).permitAll()
+
                         .anyRequest().authenticated())
                 .addFilterBefore(
                         new JwtAuthenticationFilter(jwtProvider),

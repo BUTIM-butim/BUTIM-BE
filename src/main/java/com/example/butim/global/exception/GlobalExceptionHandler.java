@@ -1,11 +1,13 @@
 package com.example.butim.global.exception;
 
 import com.example.butim.global.response.BaseResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -30,7 +32,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<BaseResponse<Void>> handleException(Exception e) {
+
+        log.error("Unhandled exception occurred", e);
+
         ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
+      
         return ResponseEntity
                 .status(errorCode.getHttpStatus())
                 .body(BaseResponse.fail(errorCode.getCode(), errorCode.getMessage()));
