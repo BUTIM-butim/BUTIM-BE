@@ -24,6 +24,12 @@ public class SecurityConfig {
                                 "/api/admin/regions/sync",
                                 "/api/regions/**"
                         ).permitAll()
+
+                        // 업종/직종 API Swagger 테스트용 허용
+                        .requestMatchers(
+                                "/api/industries/**",
+                                "/api/jobs/**"
+                        ).permitAll()
                         .anyRequest().authenticated()
                 );
 
