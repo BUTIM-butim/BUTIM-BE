@@ -36,6 +36,15 @@ public class User extends BaseEntity {
     @Column(nullable = false)
     private boolean pushAlarmAgreed;
 
+    public void update(String name, String email, String password, String phoneNumber, boolean termsAgreed, boolean pushAlarmAgreed) {
+        if (name != null) this.name = name;
+        if (email != null) this.email = email;
+        if (password != null) this.password = password;
+        if (phoneNumber != null) this.phoneNumber = phoneNumber;
+        this.termsAgreed = termsAgreed;
+        this.pushAlarmAgreed = pushAlarmAgreed;
+    }
+
     public void withdraw() {
         softDelete();
     }
