@@ -3,6 +3,7 @@ package com.example.butim.domain.auth.service;
 import com.example.butim.domain.auth.dto.request.LoginRequest;
 import com.example.butim.domain.auth.dto.request.SignupRequest;
 import com.example.butim.domain.auth.dto.response.LoginResponse;
+import com.example.butim.domain.auth.dto.response.TokenResponse;
 import com.example.butim.domain.user.entity.User;
 import com.example.butim.domain.user.repository.UserRepository;
 import com.example.butim.global.exception.CustomException;
@@ -21,6 +22,7 @@ import java.time.Duration;
 public class AuthService {
 
     private static final String REFRESH_TOKEN_PREFIX = "RT:";
+    private static final String BLACKLIST_PREFIX = "BL:";
     private static final Duration REFRESH_TOKEN_TTL = Duration.ofDays(7);
 
     private final UserRepository userRepository;
@@ -48,6 +50,8 @@ public class AuthService {
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .phoneNumber(request.getPhoneNumber())
+                .termsAgreed(request.getTermsAgreed())
+                .pushAlarmAgreed(request.getPushAlarmAgreed())
                 .build();
 
         userRepository.save(user);
@@ -68,14 +72,19 @@ public class AuthService {
 
         redisTemplate.opsForValue().set(REFRESH_TOKEN_PREFIX + user.getId(), refreshToken, REFRESH_TOKEN_TTL);
 
-        return new LoginResponse(accessToken, refreshToken);
+        return new LoginResponse(accessToken, refreshToken, user.getName());
     }
 
-    public void logout(Long userId) {
+    public void logout(Long userId, String accessToken) {
         redisTemplate.delete(REFRESH_TOKEN_PREFIX + userId);
+
+        long remaining = jwtProvider.getRemainingExpiration(accessToken);
+        if (remaining > 0) {
+            redisTemplate.opsForValue().set(BLACKLIST_PREFIX + accessToken, "logout", Duration.ofMillis(remaining));
+        }
     }
 
-    public LoginResponse refresh(String refreshToken) {
+    public TokenResponse refresh(String refreshToken) {
         jwtProvider.validate(refreshToken);
 
         Long userId = jwtProvider.getUserId(refreshToken);
@@ -90,7 +99,7 @@ public class AuthService {
 
         redisTemplate.opsForValue().set(REFRESH_TOKEN_PREFIX + userId, newRefreshToken, REFRESH_TOKEN_TTL);
 
-        return new LoginResponse(newAccessToken, newRefreshToken);
+        return new TokenResponse(newAccessToken, newRefreshToken);
     }
 
     @Transactional
