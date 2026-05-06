@@ -6,7 +6,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.StringUtils;
@@ -18,7 +17,6 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtProvider jwtProvider;
-    private final StringRedisTemplate redisTemplate;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
@@ -28,12 +26,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (token != null) {
             try {
                 jwtProvider.validate(token);
-
-                Boolean isBlacklisted = redisTemplate.hasKey("BL:" + token);
-                if (Boolean.TRUE.equals(isBlacklisted)) {
-                    filterChain.doFilter(request, response);
-                    return;
-                }
 
                 Long userId = jwtProvider.getUserId(token);
                 CustomUserDetails userDetails = new CustomUserDetails(userId);

@@ -21,7 +21,6 @@ import java.time.Duration;
 public class AuthService {
 
     private static final String REFRESH_TOKEN_PREFIX = "RT:";
-    private static final String BLACKLIST_PREFIX = "BL:";
     private static final Duration REFRESH_TOKEN_TTL = Duration.ofDays(7);
 
     private final UserRepository userRepository;
@@ -72,13 +71,8 @@ public class AuthService {
         return new LoginResponse(accessToken, refreshToken);
     }
 
-    public void logout(Long userId, String accessToken) {
+    public void logout(Long userId) {
         redisTemplate.delete(REFRESH_TOKEN_PREFIX + userId);
-
-        long remaining = jwtProvider.getRemainingExpiration(accessToken);
-        if (remaining > 0) {
-            redisTemplate.opsForValue().set(BLACKLIST_PREFIX + accessToken, "true", Duration.ofMillis(remaining));
-        }
     }
 
     public LoginResponse refresh(String refreshToken) {
@@ -100,16 +94,11 @@ public class AuthService {
     }
 
     @Transactional
-    public void withdraw(Long userId, String accessToken) {
+    public void withdraw(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         user.withdraw();
         redisTemplate.delete(REFRESH_TOKEN_PREFIX + userId);
-
-        long remaining = jwtProvider.getRemainingExpiration(accessToken);
-        if (remaining > 0) {
-            redisTemplate.opsForValue().set(BLACKLIST_PREFIX + accessToken, "true", Duration.ofMillis(remaining));
-        }
     }
 }
