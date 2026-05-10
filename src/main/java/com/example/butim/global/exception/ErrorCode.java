@@ -14,6 +14,11 @@ public enum ErrorCode {
     INDUSTRY_NOT_FOUND(HttpStatus.NOT_FOUND, 404, "해당 업종을 찾을 수 없습니다."),
     JOB_NOT_FOUND(HttpStatus.NOT_FOUND, 404, "해당 직종 목록을 찾을 수 없습니다."),
 
+    // AccidentInfo
+    ACCIDENT_INFO_NOT_FOUND(HttpStatus.NOT_FOUND, 404, "산재정보를 찾을 수 없습니다."),
+    ACCIDENT_INFO_ALREADY_EXISTS(HttpStatus.CONFLICT, 409, "이미 산재정보가 존재합니다."),
+    DIAGNOSIS_CODE_NOT_FOUND(HttpStatus.NOT_FOUND, 404, "해당 주상병코드를 찾을 수 없습니다."),
+
     // Common
     INVALID_INPUT(HttpStatus.BAD_REQUEST, 400, "입력값이 올바르지 않습니다."),
 
