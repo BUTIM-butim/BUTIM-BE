@@ -53,3 +53,5 @@ files/
 # CSV data files
 # 법정동코드 CSV를 GitHub에 올리고 싶지 않으면 아래 주석 해제
 # src/main/resources/data/*.csv
+
+.claude

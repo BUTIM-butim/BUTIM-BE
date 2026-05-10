@@ -48,6 +48,7 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**",
                                 "/api/admin/regions/sync",
+                                "/api/admin/diagnosis-codes/sync",
                                 "/api/regions/**",
                                 "/api/auth/signup",
                                 "/api/auth/login",
