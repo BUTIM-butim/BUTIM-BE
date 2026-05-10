@@ -21,7 +21,11 @@ public class GptClient {
     private final ObjectMapper objectMapper;
 
     public String chat(String systemPrompt, String userMessage) {
-        Map<String, Object> requestBody = Map.of(
+        return chat(systemPrompt, userMessage, false);
+    }
+
+    public String chat(String systemPrompt, String userMessage, boolean forceJson) {
+        Map<String, Object> requestBody = new java.util.HashMap<>(Map.of(
                 "model", openAiProperties.getModel(),
                 "messages", List.of(
                         Map.of("role", "system", "content", systemPrompt),
@@ -29,7 +33,11 @@ public class GptClient {
                 ),
                 "temperature", 0.0,
                 "max_tokens", 100
-        );
+        ));
+
+        if (forceJson) {
+            requestBody.put("response_format", Map.of("type", "json_object"));
+        }
 
         try {
             String response = openAiRestClient.post()

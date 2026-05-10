@@ -6,6 +6,7 @@ import com.example.butim.external.openai.GptClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,11 +35,11 @@ public class DiagnosisCodeGptService {
     @Transactional(readOnly = true)
     public List<DiagnosisCodeResponse> suggest(String userInput) {
         try {
-            String content = gptClient.chat(SYSTEM_PROMPT, userInput);
+            String content = gptClient.chat(SYSTEM_PROMPT, userInput, true);
             GptKeyword keyword = objectMapper.readValue(content, GptKeyword.class);
 
             return diagnosisCodeRepository
-                    .findTop3ByKeywords(keyword.bodyPart(), keyword.injuryType())
+                    .findTop3ByKeywords(keyword.bodyPart(), keyword.injuryType(), PageRequest.of(0, 3))
                     .stream()
                     .map(DiagnosisCodeResponse::from)
                     .toList();
