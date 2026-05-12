@@ -3,6 +3,8 @@ name: CI with Gradle
 on:
   pull_request:
     branches: [ "main" ]
+  push:
+    branches: [ "main" ]
 
 permissions: write-all
 
