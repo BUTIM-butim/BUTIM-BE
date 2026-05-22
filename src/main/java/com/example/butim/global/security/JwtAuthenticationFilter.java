@@ -23,8 +23,30 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String BLACKLIST_PREFIX = "BL:";
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        String method = request.getMethod();
+
+        return "OPTIONS".equalsIgnoreCase(method)
+                || path.startsWith("/swagger-ui")
+                || path.startsWith("/v3/api-docs")
+                || path.startsWith("/api/auth/signup")
+                || path.startsWith("/api/auth/login")
+                || path.startsWith("/api/auth/refresh")
+                || path.startsWith("/api/auth/phone")
+                || path.startsWith("/api/regions")
+                || path.startsWith("/api/admin/regions/sync")
+                || path.startsWith("/api/industries")
+                || path.startsWith("/api/jobs");
+    }
+
+    @Override
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain
+    ) throws ServletException, IOException {
+
         String token = resolveToken(request);
 
         if (token != null) {
@@ -38,11 +60,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 Long userId = jwtProvider.getUserId(token);
                 CustomUserDetails userDetails = new CustomUserDetails(userId);
+
                 UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                        new UsernamePasswordAuthenticationToken(
+                                userDetails,
+                                null,
+                                userDetails.getAuthorities()
+                        );
+
                 SecurityContextHolder.getContext().setAuthentication(authentication);
 
             } catch (Exception ignored) {
+                SecurityContextHolder.clearContext();
             }
         }
 
@@ -51,9 +80,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private String resolveToken(HttpServletRequest request) {
         String bearer = request.getHeader("Authorization");
+
         if (StringUtils.hasText(bearer) && bearer.startsWith("Bearer ")) {
             return bearer.substring(7);
         }
+
         return null;
     }
 }
