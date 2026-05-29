@@ -23,6 +23,16 @@ public enum ErrorCode {
     FINANCIAL_INFO_NOT_FOUND(HttpStatus.NOT_FOUND, 404, "재정정보를 찾을 수 없습니다."),
     FINANCIAL_INFO_ALREADY_EXISTS(HttpStatus.CONFLICT, 409, "이미 재정정보가 등록되어 있습니다."),
 
+    // Strategy
+    STRATEGY_NOT_FOUND(HttpStatus.NOT_FOUND, 404, "추천 전략 결과를 찾을 수 없습니다."),
+    STRATEGY_NOT_CONFIRMED(HttpStatus.BAD_REQUEST, 400, "확정된 전략이 없습니다."),
+    INVALID_STRATEGY_TYPE(HttpStatus.BAD_REQUEST, 400, "올바르지 않은 전략 유형입니다."),
+    STRATEGY_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, 404, "전략 항목을 찾을 수 없습니다."),
+    INVALID_CASHFLOW_INPUT(HttpStatus.BAD_REQUEST, 400, "입력된 항목이 없습니다. 값을 입력한 후 다시 계산해주세요."),
+    AI_RESPONSE_PARSE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, 500, "AI 추천 결과를 해석하지 못했습니다."),
+    AI_REQUEST_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, 500, "AI 전략 추천 요청에 실패했습니다."),
+    PUBLIC_DATA_REQUEST_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, 500, "공공데이터 조회에 실패했습니다."),
+
     // Common
     INVALID_INPUT(HttpStatus.BAD_REQUEST, 400, "입력값이 올바르지 않습니다."),
 

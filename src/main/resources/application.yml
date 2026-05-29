@@ -24,6 +24,7 @@ springdoc:
     path: /swagger-ui.html
 
 external:
+  # 산재보험 요양 신청/승인 데이터 API
   industrial-accident:
     base-url: https://apis.data.go.kr/B490001/SJBoheomYoyang
     service-key: ${SERVICE_KEY}
@@ -31,6 +32,32 @@ external:
     num-of-rows: 10000
     industry-path: /OPA001MT_12_INFO
     job-path: /OPA252MT_14_INFO
+
+  # 한국사회보장정보원_중앙부처복지서비스 API
+  central-welfare:
+    base-url: https://apis.data.go.kr/B554287/NationalWelfareInformationsV001
+    service-key: ${SERVICE_KEY}
+    page-no: 1
+    num-of-rows: 100
+    list-path: /NationalWelfarelistV001  # 목록 조회
+    detail-path: /NationalWelfaredetailedV001  # 상세 조회
+
+  # 한국사회보장정보원_지자체복지서비스 API
+  local-welfare:
+    base-url: https://apis.data.go.kr/B554287/LocalGovernmentWelfareInformations
+    service-key: ${SERVICE_KEY}
+    page-no: 1
+    num-of-rows: 100
+    list-path: /LcgvWelfarelist # 목록 조회
+    detail-path: /LcgvWelfaredetailed  # 상세 조회
+
+  # 서민금융진흥원_대출상품한눈에 정보 서비스 API
+  micro-finance:
+    base-url: https://apis.data.go.kr/B553701/LoanProductSearchingInfo
+    service-key: ${SERVICE_KEY}
+    page-no: 1
+    num-of-rows: 20
+    list-path: /LoanProductSearchingInfo/getLoanProductSearchingInfo
 
 jwt:
   secret: ${JWT_SECRET}
@@ -41,3 +68,4 @@ openai:
   api-key: ${OPENAI_API_KEY}
   model: gpt-4o-mini
   base-url: https://api.openai.com/v1
+  chat-completions-path: /chat/completions
