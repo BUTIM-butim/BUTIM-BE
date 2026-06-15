@@ -10,6 +10,7 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - JWT_SECRET=${JWT_SECRET}
       - SERVICE_KEY=${SERVICE_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
       - REDIS_HOST=redis
     depends_on:
       - redis
