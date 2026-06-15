@@ -24,15 +24,6 @@ springdoc:
     path: /swagger-ui.html
 
 external:
-  # 산재보험 요양 신청/승인 데이터 API
-  industrial-accident:
-    base-url: https://apis.data.go.kr/B490001/SJBoheomYoyang
-    service-key: ${SERVICE_KEY}
-    page-no: 1
-    num-of-rows: 10000
-    industry-path: /OPA001MT_12_INFO
-    job-path: /OPA252MT_14_INFO
-
   # 한국사회보장정보원_중앙부처복지서비스 API
   central-welfare:
     base-url: https://apis.data.go.kr/B554287/NationalWelfareInformationsV001

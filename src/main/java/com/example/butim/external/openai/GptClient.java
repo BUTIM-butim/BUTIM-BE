@@ -32,7 +32,7 @@ public class GptClient {
                         Map.of("role", "user", "content", userMessage)
                 ),
                 "temperature", 0.0,
-                "max_tokens", 100
+                "max_tokens", 500
         ));
 
         if (forceJson) {
