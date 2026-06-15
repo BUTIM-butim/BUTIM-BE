@@ -2,6 +2,7 @@ package com.example.butim.domain.prediction.stats;
 
 import com.example.butim.domain.accident.entity.AccidentInfo;
 import com.example.butim.domain.prediction.client.PredictionDataClient;
+import com.example.butim.domain.prediction.csv.IndustryApprovalCsvReader;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,59 +17,55 @@ import java.util.List;
 @RequiredArgsConstructor
 public class IndustryJobApprovalStatsService {
 
+    private final IndustryApprovalCsvReader industryApprovalCsvReader;
     private final PredictionDataClient predictionDataClient;
 
     public ApprovalStats calculate(AccidentInfo accidentInfo) {
         String industryName = accidentInfo.getIndustry().getIndustryName();
         String jobName = accidentInfo.getJob().getJobName();
 
-        double industryRate = calculateRate(
-                predictionDataClient.fetchIndustryApplyData(),
-                predictionDataClient.fetchIndustryApprovalData(),
-                industryName,
-                INDUSTRY_NAME_FIELDS
-        );
+        // 업종별 승인율: CSV (2018-2024 가중 평균)
+        double industryRate = industryApprovalCsvReader.getApprovalRate(industryName);
 
-        double jobRate = calculateRate(
-                predictionDataClient.fetchJobApplyData(),
-                predictionDataClient.fetchJobApprovalData(),
-                jobName,
-                JOB_NAME_FIELDS
-        );
+        // 직종별 승인율: 공공 API (OPA252MT_14/24)
+        double jobRate = calculateJobApprovalRate(jobName);
 
         log.info("승인율 계산 완료 - 업종: {}={}, 직종: {}={}", industryName, industryRate, jobName, jobRate);
         return new ApprovalStats(industryRate, jobRate);
     }
 
-    private static final String[] INDUSTRY_NAME_FIELDS = {
-            "bplc_tpbiz_nm", "bplcTpbizNm"
-    };
+    private double calculateJobApprovalRate(String jobName) {
+        try {
+            JsonNode applyData = predictionDataClient.fetchJobApplyData();
+            JsonNode approvalData = predictionDataClient.fetchJobApprovalData();
+
+            long applyCount = sumCountForName(applyData, jobName, JOB_NAME_FIELDS, APPLY_COUNT_FIELDS);
+            long approvalCount = sumCountForName(approvalData, jobName, JOB_NAME_FIELDS, APPROVAL_COUNT_FIELDS);
+
+            if (applyCount == 0) {
+                log.warn("직종 신청 건수 0 - 직종명: {}", jobName);
+                return 0.0;
+            }
+            return (double) approvalCount / applyCount;
+        } catch (Exception e) {
+            log.warn("직종별 승인율 API 호출 실패: {}", e.getMessage());
+            return 0.0;
+        }
+    }
 
     private static final String[] JOB_NAME_FIELDS = {
             "ocpt_nm", "ocptNm"
     };
 
-    // 신청 건수 필드 (OPA001MT_12_INFO, OPA252MT_14_INFO 확인)
+    // 신청 건수 필드 (OPA252MT_14_INFO 확인 기반)
     private static final String[] APPLY_COUNT_FIELDS = {
             "ia_rcpr_aply_nocs"
     };
 
-    // TODO: 승인 데이터(OPA001MT_22_INFO, OPA252MT_24_INFO) 응답 확인 후 수정
+    // TODO: 직종별 승인 데이터(OPA252MT_24_INFO) 응답 확인 후 수정
     private static final String[] APPROVAL_COUNT_FIELDS = {
             "ia_grnt_nocs", "ia_aprvl_nocs", "ia_rcpr_aply_nocs"
     };
-
-    private double calculateRate(JsonNode applyData, JsonNode approvalData, String targetName, String[] nameFields) {
-        long applyCount = sumCountForName(applyData, targetName, nameFields, APPLY_COUNT_FIELDS);
-        long approvalCount = sumCountForName(approvalData, targetName, nameFields, APPROVAL_COUNT_FIELDS);
-
-        if (applyCount == 0) {
-            log.warn("신청 건수 0 - 대상: {}", targetName);
-            return 0.0;
-        }
-
-        return (double) approvalCount / applyCount;
-    }
 
     private long sumCountForName(JsonNode root, String targetName, String[] nameFields, String[] countFields) {
         List<JsonNode> items = extractItems(root);
@@ -88,8 +85,9 @@ public class IndustryJobApprovalStatsService {
 
     private boolean matchesName(String itemName, String targetName) {
         if (itemName == null || targetName == null) return false;
-        String normalized = normalize(targetName);
-        return normalize(itemName).contains(normalized) || normalized.contains(normalize(itemName));
+        String a = normalize(itemName);
+        String b = normalize(targetName);
+        return a.contains(b) || b.contains(a);
     }
 
     private long extractCount(JsonNode item, String[] countFields) {
@@ -97,7 +95,8 @@ public class IndustryJobApprovalStatsService {
             JsonNode value = item.get(field);
             if (value != null && !value.isNull()) {
                 try {
-                    return value.asLong();
+                    long v = value.asLong();
+                    if (v > 0) return v;
                 } catch (Exception ignored) {
                 }
             }
@@ -131,17 +130,14 @@ public class IndustryJobApprovalStatsService {
             }
         }
 
-        log.warn("응답에서 items를 찾지 못했습니다.");
+        log.warn("직종별 API 응답에서 items를 찾지 못했습니다.");
         return Collections.emptyList();
     }
 
     private List<JsonNode> toList(JsonNode node) {
         List<JsonNode> result = new ArrayList<>();
-        if (node.isArray()) {
-            node.forEach(result::add);
-        } else if (node.isObject()) {
-            result.add(node);
-        }
+        if (node.isArray()) node.forEach(result::add);
+        else if (node.isObject()) result.add(node);
         return result;
     }
 }
