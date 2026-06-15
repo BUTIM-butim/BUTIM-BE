@@ -1,6 +1,8 @@
 package com.example.butim.domain.industry.client;
 
 import com.example.butim.domain.industry.config.IndustrialAccidentProperties;
+import com.example.butim.global.exception.CustomException;
+import com.example.butim.global.exception.ErrorCode;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
@@ -45,11 +47,17 @@ public class IndustrialAccidentApiClient {
 
         log.info("공공데이터 API 요청 URL: {}", uri);
 
-        String responseBody = restClient.get()
-                .uri(uri)
-                .accept(MediaType.ALL)
-                .retrieve()
-                .body(String.class);
+        String responseBody;
+        try {
+            responseBody = restClient.get()
+                    .uri(uri)
+                    .accept(MediaType.ALL)
+                    .retrieve()
+                    .body(String.class);
+        } catch (Exception e) {
+            log.error("공공데이터 API 요청 실패. url={}", uri, e);
+            throw new CustomException(ErrorCode.PUBLIC_DATA_REQUEST_FAILED);
+        }
 
         log.info("공공데이터 API 응답 길이: {}", responseBody != null ? responseBody.length() : 0);
 
