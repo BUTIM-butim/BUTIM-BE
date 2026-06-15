@@ -35,8 +35,8 @@ public class Prediction extends BaseEntity {
     @Column(nullable = false, length = 10)
     private Reliability reliability;
 
-    @Column(name = "reliability_description", nullable = false)
-    private String reliabilityDescription;
+    @Column(name = "reliability_score", nullable = false)
+    private Integer reliabilityScore;
 
     @Column(name = "similar_case_count", nullable = false)
     private Integer similarCaseCount;
@@ -47,25 +47,25 @@ public class Prediction extends BaseEntity {
     @Builder
     public Prediction(User user, Integer predictionMinDays, Integer predictionMaxDays,
                       Integer predictionMedianDays, Reliability reliability,
-                      String reliabilityDescription, Integer similarCaseCount, String analysisText) {
+                      Integer reliabilityScore, Integer similarCaseCount, String analysisText) {
         this.user = user;
         this.predictionMinDays = predictionMinDays;
         this.predictionMaxDays = predictionMaxDays;
         this.predictionMedianDays = predictionMedianDays;
         this.reliability = reliability;
-        this.reliabilityDescription = reliabilityDescription;
+        this.reliabilityScore = reliabilityScore;
         this.similarCaseCount = similarCaseCount;
         this.analysisText = analysisText;
     }
 
     public void update(Integer predictionMinDays, Integer predictionMaxDays,
                        Integer predictionMedianDays, Reliability reliability,
-                       String reliabilityDescription, Integer similarCaseCount, String analysisText) {
+                       Integer reliabilityScore, Integer similarCaseCount, String analysisText) {
         this.predictionMinDays = predictionMinDays;
         this.predictionMaxDays = predictionMaxDays;
         this.predictionMedianDays = predictionMedianDays;
         this.reliability = reliability;
-        this.reliabilityDescription = reliabilityDescription;
+        this.reliabilityScore = reliabilityScore;
         this.similarCaseCount = similarCaseCount;
         this.analysisText = analysisText;
     }

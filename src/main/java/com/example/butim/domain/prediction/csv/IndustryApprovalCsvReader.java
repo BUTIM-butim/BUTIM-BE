@@ -78,20 +78,43 @@ public class IndustryApprovalCsvReader {
 
     /**
      * 업종명으로 가중 승인율 조회 (0.0 ~ 1.0)
-     * 매칭 실패 시 0.0 반환
+     * CSV는 대분류(전기·가스·수도사업), DB는 세부분류(가스업)일 수 있으므로
+     * 키워드 토큰 기반으로 매칭
      */
     public double getApprovalRate(String industryName) {
         String normalized = normalize(industryName);
 
-        // 정확히 일치
+        // 1. 정확히 일치
         if (approvalRateByIndustry.containsKey(normalized)) {
             return approvalRateByIndustry.get(normalized);
         }
 
-        // 부분 일치 (DB 업종명이 CSV 업종명을 포함하거나 그 반대)
+        // 2. DB 업종명이 CSV 업종명에 포함 (가스업 → 전기·가스·수도사업)
         for (Map.Entry<String, Double> entry : approvalRateByIndustry.entrySet()) {
-            if (normalized.contains(entry.getKey()) || entry.getKey().contains(normalized)) {
+            if (entry.getKey().contains(normalized)) {
+                log.debug("업종 부분 매칭: {} → {}", industryName, entry.getKey());
                 return entry.getValue();
+            }
+        }
+
+        // 3. CSV 업종명이 DB 업종명에 포함 (제조업 → 금속제조업)
+        for (Map.Entry<String, Double> entry : approvalRateByIndustry.entrySet()) {
+            if (normalized.contains(entry.getKey())) {
+                log.debug("업종 역방향 매칭: {} → {}", industryName, entry.getKey());
+                return entry.getValue();
+            }
+        }
+
+        // 4. 2글자 이상 부분 문자열로 CSV 키 검색 ("가스업" → "가스" 포함 여부)
+        for (int len = Math.min(normalized.length(), 4); len >= 2; len--) {
+            for (int i = 0; i <= normalized.length() - len; i++) {
+                String sub = normalized.substring(i, i + len);
+                for (Map.Entry<String, Double> entry : approvalRateByIndustry.entrySet()) {
+                    if (entry.getKey().contains(sub)) {
+                        log.debug("업종 서브스트링 매칭: {} ('{}}') → {}", industryName, sub, entry.getKey());
+                        return entry.getValue();
+                    }
+                }
             }
         }
 

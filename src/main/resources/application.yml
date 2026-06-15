@@ -24,42 +24,6 @@ springdoc:
     path: /swagger-ui.html
 
 external:
-  # 산재보험 요양 신청/승인 데이터 API
-  industrial-accident:
-    base-url: https://apis.data.go.kr/B490001/SJBoheomYoyang
-    service-key: ${SERVICE_KEY}
-    page-no: 1
-    num-of-rows: 10000
-    industry-path: /OPA001MT_12_INFO
-    job-path: /OPA252MT_14_INFO
-
-  # 산재 판례 정보 API
-  precedent:
-    base-url: https://apis.data.go.kr/B490001/sjbPrecedentInfoService
-    service-key: ${SERVICE_KEY}
-    page-no: 1
-    num-of-rows: 10
-    count-path: /getSjbYuhyeongByCountPstate
-    content-path: /getSjbPrecedentNaeyongPstate
-
-  # 산재 승인 기간 예측용 API
-  prediction-data:
-    base-url: https://apis.data.go.kr/B490001/SJBoheomYoyang
-    service-key: ${SERVICE_KEY}
-    page-no: 1
-    num-of-rows: 10000
-    industry-apply-path: /OPA001MT_12_INFO
-    industry-approval-path: /OPA001MT_22_INFO
-    job-apply-path: /OPA252MT_14_INFO
-    job-approval-path: /OPA252MT_24_INFO
-    business-size-apply-path: /OPA001MT_11_INFO
-    business-size-approval-path: /OPA001MT_21_INFO
-    age-apply-path: /OPA252MT_11_INFO
-    age-approval-path: /OPA252MT_21_INFO
-    accident-type-approval-path: /OPA020MT_22_INFO
-    diagnosis-apply-path: /OPA020MT_11_INFO
-    diagnosis-approval-path: /OPA020MT_21_INFO
-
   # 한국사회보장정보원_중앙부처복지서비스 API
   central-welfare:
     base-url: https://apis.data.go.kr/B554287/NationalWelfareInformationsV001
