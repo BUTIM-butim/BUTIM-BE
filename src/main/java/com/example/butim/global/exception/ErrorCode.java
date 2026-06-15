@@ -19,6 +19,9 @@ public enum ErrorCode {
     ACCIDENT_INFO_ALREADY_EXISTS(HttpStatus.CONFLICT, 409, "이미 산재정보가 존재합니다."),
     DIAGNOSIS_CODE_NOT_FOUND(HttpStatus.NOT_FOUND, 404, "해당 주상병코드를 찾을 수 없습니다."),
 
+    // Prediction
+    PREDICTION_NOT_FOUND(HttpStatus.NOT_FOUND, 404, "예측 결과를 찾을 수 없습니다."),
+
     // Financial
     FINANCIAL_INFO_NOT_FOUND(HttpStatus.NOT_FOUND, 404, "재정정보를 찾을 수 없습니다."),
     FINANCIAL_INFO_ALREADY_EXISTS(HttpStatus.CONFLICT, 409, "이미 재정정보가 등록되어 있습니다."),
