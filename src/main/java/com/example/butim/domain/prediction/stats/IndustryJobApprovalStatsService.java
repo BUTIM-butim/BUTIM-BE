@@ -40,24 +40,27 @@ public class IndustryJobApprovalStatsService {
         return new ApprovalStats(industryRate, jobRate);
     }
 
-    // TODO: 실제 API 응답 확인 후 필드명 수정
     private static final String[] INDUSTRY_NAME_FIELDS = {
-            "bplc_tpbiz_nm", "bplcTpbizNm", "industry_nm", "industryNm", "industryName", "업종명"
+            "bplc_tpbiz_nm", "bplcTpbizNm"
     };
 
     private static final String[] JOB_NAME_FIELDS = {
-            "ocpt_nm", "ocptNm", "job_nm", "jobNm", "jobName", "직종명"
+            "ocpt_nm", "ocptNm"
     };
 
-    // TODO: 실제 API 응답 확인 후 건수 필드명 수정
-    private static final String[] COUNT_FIELDS = {
-            "cnt", "acdnt_cnt", "acdntCnt", "req_cnt", "reqCnt",
-            "grnt_cnt", "grntCnt", "dsps_cnt", "dspsCnt", "case_cnt", "caseCnt"
+    // 신청 건수 필드 (OPA001MT_12_INFO, OPA252MT_14_INFO 확인)
+    private static final String[] APPLY_COUNT_FIELDS = {
+            "ia_rcpr_aply_nocs"
+    };
+
+    // TODO: 승인 데이터(OPA001MT_22_INFO, OPA252MT_24_INFO) 응답 확인 후 수정
+    private static final String[] APPROVAL_COUNT_FIELDS = {
+            "ia_grnt_nocs", "ia_aprvl_nocs", "ia_rcpr_aply_nocs"
     };
 
     private double calculateRate(JsonNode applyData, JsonNode approvalData, String targetName, String[] nameFields) {
-        long applyCount = sumCountForName(applyData, targetName, nameFields);
-        long approvalCount = sumCountForName(approvalData, targetName, nameFields);
+        long applyCount = sumCountForName(applyData, targetName, nameFields, APPLY_COUNT_FIELDS);
+        long approvalCount = sumCountForName(approvalData, targetName, nameFields, APPROVAL_COUNT_FIELDS);
 
         if (applyCount == 0) {
             log.warn("신청 건수 0 - 대상: {}", targetName);
@@ -67,7 +70,7 @@ public class IndustryJobApprovalStatsService {
         return (double) approvalCount / applyCount;
     }
 
-    private long sumCountForName(JsonNode root, String targetName, String[] nameFields) {
+    private long sumCountForName(JsonNode root, String targetName, String[] nameFields, String[] countFields) {
         List<JsonNode> items = extractItems(root);
         long total = 0;
 
@@ -76,7 +79,7 @@ public class IndustryJobApprovalStatsService {
             if (itemName == null) continue;
 
             if (matchesName(itemName, targetName)) {
-                total += extractCount(item);
+                total += extractCount(item, countFields);
             }
         }
 
@@ -89,8 +92,8 @@ public class IndustryJobApprovalStatsService {
         return normalize(itemName).contains(normalized) || normalized.contains(normalize(itemName));
     }
 
-    private long extractCount(JsonNode item) {
-        for (String field : COUNT_FIELDS) {
+    private long extractCount(JsonNode item, String[] countFields) {
+        for (String field : countFields) {
             JsonNode value = item.get(field);
             if (value != null && !value.isNull()) {
                 try {

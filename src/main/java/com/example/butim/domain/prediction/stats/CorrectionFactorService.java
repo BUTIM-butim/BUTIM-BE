@@ -56,7 +56,7 @@ public class CorrectionFactorService {
         return overallRate / targetRate;
     }
 
-    // TODO: 실제 API 응답 확인 후 사업장 규모 분류명 수정
+    // TODO: OPA001MT_11_INFO 응답 확인 후 분류명 수정
     private String mapBusinessSizeToApiLabel(BusinessSize businessSize) {
         return switch (businessSize) {
             case UNDER_5 -> "5인미만";
@@ -83,55 +83,58 @@ public class CorrectionFactorService {
     }
 
     private double calculateOverallRate(JsonNode applyData, JsonNode approvalData) {
-        long totalApply = sumAllCounts(applyData);
-        long totalApproval = sumAllCounts(approvalData);
+        long totalApply = sumAllCounts(applyData, APPLY_COUNT_FIELDS);
+        long totalApproval = sumAllCounts(approvalData, APPROVAL_COUNT_FIELDS);
         if (totalApply == 0) return 0.0;
         return (double) totalApproval / totalApply;
     }
 
     private double calculateRateForCategory(JsonNode applyData, JsonNode approvalData,
                                             String targetLabel, String[] nameFields) {
-        long applyCount = sumCountForLabel(applyData, targetLabel, nameFields);
-        long approvalCount = sumCountForLabel(approvalData, targetLabel, nameFields);
+        long applyCount = sumCountForLabel(applyData, targetLabel, nameFields, APPLY_COUNT_FIELDS);
+        long approvalCount = sumCountForLabel(approvalData, targetLabel, nameFields, APPROVAL_COUNT_FIELDS);
         if (applyCount == 0) return 0.0;
         return (double) approvalCount / applyCount;
     }
 
-    private long sumAllCounts(JsonNode root) {
+    private long sumAllCounts(JsonNode root, String[] countFields) {
         return extractItems(root).stream()
-                .mapToLong(this::extractCount)
+                .mapToLong(item -> extractCount(item, countFields))
                 .sum();
     }
 
-    private long sumCountForLabel(JsonNode root, String targetLabel, String[] nameFields) {
+    private long sumCountForLabel(JsonNode root, String targetLabel, String[] nameFields, String[] countFields) {
         long total = 0;
         for (JsonNode item : extractItems(root)) {
             String itemLabel = extractText(item, nameFields);
             if (itemLabel != null && normalize(itemLabel).contains(normalize(targetLabel))) {
-                total += extractCount(item);
+                total += extractCount(item, countFields);
             }
         }
         return total;
     }
 
-    // TODO: 실제 API 응답 확인 후 필드명 수정
+    // TODO: OPA001MT_11_INFO / OPA001MT_21_INFO 응답 확인 후 수정
     private static final String[] BUSINESS_SIZE_FIELDS = {
-            "bplc_sz_cd", "bplcSzCd", "bplc_sz_nm", "bplcSzNm",
-            "business_size", "businessSize", "사업장규모", "규모"
+            "bplc_sz_cd", "bplc_sz_nm"
     };
 
+    // TODO: OPA252MT_11_INFO / OPA252MT_21_INFO 응답 확인 후 수정
     private static final String[] AGE_FIELDS = {
-            "age_grop_cd", "ageGropCd", "age_grop_nm", "ageGropNm",
-            "age_group", "ageGroup", "연령대", "나이"
+            "age_grop_cd", "age_grop_nm"
     };
 
-    private static final String[] COUNT_FIELDS = {
-            "cnt", "acdnt_cnt", "acdntCnt", "req_cnt", "reqCnt",
-            "grnt_cnt", "grntCnt", "dsps_cnt", "dspsCnt", "case_cnt", "caseCnt"
+    private static final String[] APPLY_COUNT_FIELDS = {
+            "ia_rcpr_aply_nocs"
     };
 
-    private long extractCount(JsonNode item) {
-        for (String field : COUNT_FIELDS) {
+    // TODO: 승인 데이터 응답 확인 후 수정
+    private static final String[] APPROVAL_COUNT_FIELDS = {
+            "ia_grnt_nocs", "ia_aprvl_nocs", "ia_rcpr_aply_nocs"
+    };
+
+    private long extractCount(JsonNode item, String[] countFields) {
+        for (String field : countFields) {
             JsonNode value = item.get(field);
             if (value != null && !value.isNull()) {
                 try {
