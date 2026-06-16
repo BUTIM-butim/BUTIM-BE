@@ -36,7 +36,7 @@ public class LocalWelfareApiClient {
     @Value("${external.local-welfare.list-path}")
     private String listPath;
 
-    public List<CandidateSupportDto> search(String sidoName, String sigunguName, String keyword) {
+    public List<CandidateSupportDto> search(String sidoName, String sigunguName) {
         try {
             WebClient webClient = webClientBuilder
                     .baseUrl(baseUrl)
@@ -72,44 +72,26 @@ public class LocalWelfareApiClient {
                     "지자체복지서비스"
             );
 
-            List<CandidateSupportDto> filteredItems = parsedItems.stream()
-                    .filter(item -> containsKeyword(item, keyword))
-                    .toList();
-
             log.info(
-                    "지자체복지서비스 파싱 결과: 전체 {}건, sidoName={}, sigunguName={}, keyword={} 필터링 후 {}건",
+                    "지자체복지서비스 파싱 결과: {}건, sidoName={}, sigunguName={}",
                     parsedItems.size(),
                     sidoName,
-                    sigunguName,
-                    keyword,
-                    filteredItems.size()
+                    sigunguName
             );
 
-            return filteredItems;
+            return parsedItems;
 
         } catch (Exception e) {
             log.error(
-                    "지자체복지서비스 API 조회 실패. baseUrl={}, listPath={}, sidoName={}, sigunguName={}, keyword={}",
+                    "지자체복지서비스 API 조회 실패. baseUrl={}, listPath={}, sidoName={}, sigunguName={}",
                     baseUrl,
                     listPath,
                     sidoName,
                     sigunguName,
-                    keyword,
                     e
             );
             throw new CustomException(ErrorCode.PUBLIC_DATA_REQUEST_FAILED);
         }
-    }
-
-    private boolean containsKeyword(CandidateSupportDto item, String keyword) {
-        if (keyword == null || keyword.isBlank()) {
-            return true;
-        }
-
-        String name = item.name() == null ? "" : item.name();
-        String description = item.description() == null ? "" : item.description();
-
-        return name.contains(keyword) || description.contains(keyword);
     }
 
     private String abbreviate(String value) {
