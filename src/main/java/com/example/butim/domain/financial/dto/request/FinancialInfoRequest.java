@@ -46,8 +46,6 @@ public class FinancialInfoRequest {
     @NotNull(message = "장애 여부는 필수입니다.")
     private Boolean hasDisability;
 
-    private Integer disabilityGrade;
-
     @NotNull(message = "현재 고용 상태는 필수입니다.")
     private EmploymentStatus currentEmploymentStatus;
 }

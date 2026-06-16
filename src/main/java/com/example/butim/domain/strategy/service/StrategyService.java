@@ -1,5 +1,12 @@
 package com.example.butim.domain.strategy.service;
 
+import com.example.butim.domain.accident.entity.AccidentInfo;
+import com.example.butim.domain.accident.repository.AccidentInfoRepository;
+import com.example.butim.domain.financial.entity.FinancialInfo;
+import com.example.butim.domain.financial.repository.FinancialInfoRepository;
+import com.example.butim.domain.prediction.entity.Prediction;
+import com.example.butim.domain.prediction.repository.PredictionRepository;
+import com.example.butim.domain.region.entity.Region;
 import com.example.butim.domain.strategy.dto.common.*;
 import com.example.butim.domain.strategy.dto.request.CashflowRecalculateRequest;
 import com.example.butim.domain.strategy.dto.request.StrategyConfirmRequest;
@@ -35,6 +42,9 @@ public class StrategyService {
     private final StrategyResultRepository strategyResultRepository;
     private final StrategyItemRepository strategyItemRepository;
     private final CashflowSnapshotRepository cashflowSnapshotRepository;
+    private final AccidentInfoRepository accidentInfoRepository;
+    private final FinancialInfoRepository financialInfoRepository;
+    private final PredictionRepository predictionRepository;
 
     private final WelfareApiAggregator welfareApiAggregator;
     private final StrategyAiService strategyAiService;
@@ -42,22 +52,33 @@ public class StrategyService {
 
     @Transactional
     public StrategyRunResponse runStrategy(StrategyRunRequest request) {
-        List<CandidateSupportDto> candidates = welfareApiAggregator.collectCandidates(request.regionName());
+        AccidentInfo accidentInfo = accidentInfoRepository.findById(request.accidentInfoId())
+                .orElseThrow(() -> new CustomException(ErrorCode.ACCIDENT_INFO_NOT_FOUND));
 
-        AiStrategyResult aiResult = strategyAiService.recommend(request, candidates);
+        FinancialInfo financialInfo = financialInfoRepository.findById(request.financialInfoId())
+                .orElseThrow(() -> new CustomException(ErrorCode.FINANCIAL_INFO_NOT_FOUND));
+
+        Prediction prediction = predictionRepository.findByUserId(request.userId())
+                .orElseThrow(() -> new CustomException(ErrorCode.PREDICTION_NOT_FOUND));
+
+        StrategyContext context = buildContext(accidentInfo, financialInfo, prediction);
+
+        List<CandidateSupportDto> candidates = welfareApiAggregator.collectCandidates(context.regionName());
+
+        AiStrategyResult aiResult = strategyAiService.recommend(candidates, context);
 
         StrategyResult result = StrategyResult.builder()
                 .userId(request.userId())
                 .accidentInfoId(request.accidentInfoId())
                 .financialInfoId(request.financialInfoId())
-                .currentAsset(request.currentAsset())
-                .monthlyLivingCost(request.monthlyLivingCost())
-                .cashGapDay(request.cashGapDay())
-                .approvalExpectedDays(request.approvalExpectedDays())
-                .paymentExpectedDays(request.paymentExpectedDays())
-                .expectedWorkersCompensationAmount(zeroIfNull(request.expectedWorkersCompensationAmount()))
-                .hospitalCost(zeroIfNull(request.hospitalCost()))
-                .insuranceAmount(zeroIfNull(request.insuranceAmount()))
+                .currentAsset(context.currentAsset())
+                .monthlyLivingCost(context.monthlyLivingCost())
+                .cashGapDay(context.cashGapDay())
+                .approvalExpectedDays(context.approvalExpectedDays())
+                .paymentExpectedDays(context.paymentExpectedDays())
+                .expectedWorkersCompensationAmount(0)
+                .hospitalCost(0)
+                .insuranceAmount(0)
                 .aiSummary(aiResult.summary())
                 .build();
 
@@ -199,6 +220,47 @@ public class StrategyService {
                 toCashflowDtos(saved),
                 toTimelineDtos(saved)
         );
+    }
+
+    private StrategyContext buildContext(AccidentInfo accidentInfo, FinancialInfo financialInfo, Prediction prediction) {
+        Region region = financialInfo.getRegion();
+
+        String regionCode = region.getSigunguCode() != null ? region.getSigunguCode() : region.getSidoCode();
+        String regionName = region.getSigunguName() != null ? region.getSigunguName() : region.getSidoName();
+
+        String injuryName = accidentInfo.getDiagnosisCode() != null
+                ? accidentInfo.getDiagnosisCode().getName()
+                : null;
+
+        Integer currentAsset = financialInfo.getCurrentAssets();
+        Integer monthlyLivingCost = financialInfo.getMonthlyFixedExpense();
+        Integer cashGapDay = calculateCashGapDay(currentAsset, monthlyLivingCost);
+        Integer approvalExpectedDays = prediction.getPredictionMedianDays();
+        Integer paymentExpectedDays = approvalExpectedDays + 14;
+
+        return new StrategyContext(
+                regionCode,
+                regionName,
+                injuryName,
+                accidentInfo.getJob().getJobName(),
+                accidentInfo.getEmploymentType().name(),
+                currentAsset,
+                monthlyLivingCost,
+                cashGapDay,
+                approvalExpectedDays,
+                paymentExpectedDays
+        );
+    }
+
+    private Integer calculateCashGapDay(Integer currentAsset, Integer monthlyLivingCost) {
+        if (monthlyLivingCost == null || monthlyLivingCost == 0) {
+            return 1;
+        }
+
+        double dailyLivingCost = monthlyLivingCost / 30.0;
+        int days = (int) Math.ceil(zeroIfNull(currentAsset) / dailyLivingCost);
+
+        return Math.max(days, 1);
     }
 
     private StrategyResult getLatestResult(Long userId) {

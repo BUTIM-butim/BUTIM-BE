@@ -37,7 +37,6 @@ public class FinancialInfoResponse {
 
     private Boolean isPregnant;
     private Boolean hasDisability;
-    private Integer disabilityGrade;
 
     private EmploymentStatus currentEmploymentStatus;
 
@@ -66,7 +65,6 @@ public class FinancialInfoResponse {
                 .childCount(financialInfo.getChildCount())
                 .isPregnant(financialInfo.getIsPregnant())
                 .hasDisability(financialInfo.getHasDisability())
-                .disabilityGrade(financialInfo.getDisabilityGrade())
                 .currentEmploymentStatus(financialInfo.getCurrentEmploymentStatus())
                 .createdAt(financialInfo.getCreatedAt())
                 .updatedAt(financialInfo.getUpdatedAt())
