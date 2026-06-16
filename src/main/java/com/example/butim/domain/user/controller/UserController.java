@@ -1,6 +1,7 @@
 package com.example.butim.domain.user.controller;
 
 import com.example.butim.domain.user.dto.request.UpdateUserRequest;
+import com.example.butim.domain.user.dto.response.UserMainResponse;
 import com.example.butim.domain.user.dto.response.UserMeResponse;
 import com.example.butim.domain.user.service.UserService;
 import com.example.butim.global.response.BaseResponse;
@@ -30,6 +31,14 @@ public class UserController {
     public ResponseEntity<BaseResponse<UserMeResponse>> getMe(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         return ResponseEntity.ok(BaseResponse.success("내 정보 조회에 성공했습니다.", userService.getMe(userDetails.getUserId())));
+    }
+
+    @Operation(summary = "메인 페이지 조회", description = "메인 페이지에 필요한 예측 기간 및 전략 정보를 반환합니다.")
+    @GetMapping("/api/users/main")
+    public ResponseEntity<BaseResponse<UserMainResponse>> getMain(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ResponseEntity.ok(BaseResponse.success("메인 페이지 조회에 성공했습니다.",
+                userService.getMain(userDetails.getUserId())));
     }
 
     @Operation(summary = "내 정보 수정", description = "이름, 이메일, 비밀번호, 전화번호를 수정합니다. 전화번호 변경 시 인증 필요. 약관 동의 필수.")
