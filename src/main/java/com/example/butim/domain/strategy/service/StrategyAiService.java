@@ -34,10 +34,13 @@ public class StrategyAiService {
                 4. 후보 목록에 없는 지원금이나 대출은 절대 만들지 않는다.
                 5. 대출 상품은 itemType을 MICRO_FINANCE_LOAN으로 둔다.
                 6. 대출 상품은 repaymentRequired를 true로 둔다.
-                7. 복지서비스는 repaymentRequired를 false로 둔다.
+                7. 복지서비스(itemType이 CENTRAL_WELFARE 또는 LOCAL_WELFARE)는 repaymentRequired를 false로 둔다.
                 8. 산재보험과 중복 가능성이 있어 보이면 overlapsWithWorkersCompensation을 true로 둔다.
                 9. expectedReceiveDay는 오늘 기준 며칠 뒤 받을 수 있는지를 의미하는 숫자다.
                 10. 전략별 items는 2개에서 4개 사이로 구성한다.
+                11. 지원금(복지서비스)은 상환 의무가 없는 항목이므로 두 전략 모두 반드시 1개 이상 포함해야 한다. 후보 목록에 복지서비스가 전혀 없을 때만 예외로 한다.
+                12. 두 전략에 포함하는 복지서비스는 서로 달라야 한다. 후보 목록에 복지서비스가 2개 이상 있다면, STRATEGY_1과 STRATEGY_2에 동일한 복지서비스를 중복으로 넣지 말고 각 전략의 목적에 맞는 다른 후보를 선택한다.
+                13. 저금리 대출(MICRO_FINANCE_LOAN)은 상환 의무가 있는 선택 항목으로, 두 전략을 구분하는 기준이 된다. STRATEGY_1(가장 빠르게 현금 공백을 줄이는 전략)은 상환 부담을 늘리지 않기 위해 대출을 포함하지 않는 것을 우선한다. STRATEGY_2(수령 금액을 최대화하는 전략)는 필요하다면 후보 목록의 저금리 대출을 포함해 총 수령액을 늘린다. 후보 목록에 대출이 없다면 두 전략 모두 대출 없이 구성한다.
                 
                 반환 JSON 형식:
                 {
