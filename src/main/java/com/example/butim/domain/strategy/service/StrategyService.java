@@ -350,8 +350,11 @@ public class StrategyService {
                 .orElse(null);
     }
 
+    private static final int MIN_WELFARE_ITEMS_PER_STRATEGY = 2;
+    private static final int MAX_ITEMS_PER_STRATEGY = 4;
+
     /**
-     * AI가 두 전략 모두에 지원금(복지서비스)을 최소 1개 이상, 서로 다르게 포함하도록
+     * AI가 두 전략 모두에 지원금(복지서비스)을 가능한 한 여러 개, 서로 다르게 포함하도록
      * 프롬프트로 안내하지만 강제되지 않으므로, 후보 목록을 기준으로 직접 보정한다.
      */
     private AiStrategyResult enforceWelfareCoverage(
@@ -377,26 +380,35 @@ public class StrategyService {
             return aiResult;
         }
 
-        CandidateSupportDto welfare1 = findWelfareItem(strategy1, candidates);
-        CandidateSupportDto welfare2 = findWelfareItem(strategy2, candidates);
+        List<CandidateSupportDto> welfare1 = new ArrayList<>(findWelfareItems(strategy1, candidates));
+        List<CandidateSupportDto> welfare2 = new ArrayList<>(findWelfareItems(strategy2, candidates));
+
+        int target = Math.min(MIN_WELFARE_ITEMS_PER_STRATEGY, welfareCandidates.size());
 
         AiStrategyPlan fixedStrategy1 = strategy1;
         AiStrategyPlan fixedStrategy2 = strategy2;
 
-        if (welfare1 == null) {
-            CandidateSupportDto pick = pickWelfareCandidate(welfareCandidates, welfare2);
-            fixedStrategy1 = withAppendedItem(strategy1, pick);
-            welfare1 = pick;
+        while (welfare1.size() < target) {
+            CandidateSupportDto pick = pickWelfareCandidate(welfareCandidates, welfare1, welfare2);
+            if (pick == null) break;
+
+            fixedStrategy1 = withAppendedItem(fixedStrategy1, pick);
+            welfare1.add(pick);
         }
 
-        if (welfare2 == null) {
-            CandidateSupportDto pick = pickWelfareCandidate(welfareCandidates, welfare1);
-            fixedStrategy2 = withAppendedItem(strategy2, pick);
-        } else if (welfareCandidates.size() > 1 && sameCandidate(welfare1, welfare2)) {
-            CandidateSupportDto alt = pickWelfareCandidate(welfareCandidates, welfare1);
+        while (welfare2.size() < target) {
+            CandidateSupportDto pick = pickWelfareCandidate(welfareCandidates, welfare2, welfare1);
+            if (pick == null) break;
 
-            if (alt != null && !sameCandidate(alt, welfare2)) {
-                fixedStrategy2 = withAppendedItem(strategy2, alt);
+            fixedStrategy2 = withAppendedItem(fixedStrategy2, pick);
+            welfare2.add(pick);
+        }
+
+        if (welfareCandidates.size() > target && sameWelfareSet(welfare1, welfare2)) {
+            CandidateSupportDto alt = pickWelfareCandidate(welfareCandidates, welfare2, List.of());
+
+            if (alt != null) {
+                fixedStrategy2 = withAppendedItem(fixedStrategy2, alt);
             }
         }
 
@@ -410,13 +422,15 @@ public class StrategyService {
                 .orElse(null);
     }
 
-    private CandidateSupportDto findWelfareItem(
+    private List<CandidateSupportDto> findWelfareItems(
             AiStrategyPlan plan,
             List<CandidateSupportDto> candidates
     ) {
         if (plan.items() == null) {
-            return null;
+            return List.of();
         }
+
+        List<CandidateSupportDto> result = new ArrayList<>();
 
         for (AiStrategyPlan.AiStrategyItem item : plan.items()) {
             CandidateSupportDto matched = findCandidate(candidates, item.externalId(), item.itemName());
@@ -425,27 +439,47 @@ public class StrategyService {
                     ? matched.itemType() != StrategyItemType.MICRO_FINANCE_LOAN
                     : !"MICRO_FINANCE_LOAN".equals(item.itemType());
 
-            if (isWelfare) {
-                return matched;
+            if (isWelfare && matched != null) {
+                result.add(matched);
+            }
+        }
+
+        return result;
+    }
+
+    private CandidateSupportDto pickWelfareCandidate(
+            List<CandidateSupportDto> welfareCandidates,
+            List<CandidateSupportDto> usedBySelf,
+            List<CandidateSupportDto> preferAvoid
+    ) {
+        for (CandidateSupportDto candidate : welfareCandidates) {
+            boolean usedAlready = containsCandidate(usedBySelf, candidate);
+            boolean avoided = containsCandidate(preferAvoid, candidate);
+
+            if (!usedAlready && !avoided) {
+                return candidate;
+            }
+        }
+
+        for (CandidateSupportDto candidate : welfareCandidates) {
+            if (!containsCandidate(usedBySelf, candidate)) {
+                return candidate;
             }
         }
 
         return null;
     }
 
-    private CandidateSupportDto pickWelfareCandidate(
-            List<CandidateSupportDto> welfareCandidates,
-            CandidateSupportDto avoid
-    ) {
-        if (avoid != null) {
-            for (CandidateSupportDto candidate : welfareCandidates) {
-                if (!sameCandidate(candidate, avoid)) {
-                    return candidate;
-                }
-            }
+    private boolean containsCandidate(List<CandidateSupportDto> list, CandidateSupportDto target) {
+        return list.stream().anyMatch(candidate -> sameCandidate(candidate, target));
+    }
+
+    private boolean sameWelfareSet(List<CandidateSupportDto> a, List<CandidateSupportDto> b) {
+        if (a.size() != b.size()) {
+            return false;
         }
 
-        return welfareCandidates.get(0);
+        return a.stream().allMatch(candidate -> containsCandidate(b, candidate));
     }
 
     private boolean sameCandidate(CandidateSupportDto a, CandidateSupportDto b) {
@@ -469,8 +503,17 @@ public class StrategyService {
                 plan.items() == null ? List.of() : plan.items()
         );
 
-        if (items.size() >= 4) {
-            items.remove(items.size() - 1);
+        if (items.size() >= MAX_ITEMS_PER_STRATEGY) {
+            int loanIndex = -1;
+
+            for (int i = items.size() - 1; i >= 0; i--) {
+                if ("MICRO_FINANCE_LOAN".equals(items.get(i).itemType())) {
+                    loanIndex = i;
+                    break;
+                }
+            }
+
+            items.remove(loanIndex >= 0 ? loanIndex : items.size() - 1);
         }
 
         items.add(new AiStrategyPlan.AiStrategyItem(
