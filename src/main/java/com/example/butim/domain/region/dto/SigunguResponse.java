@@ -7,6 +7,7 @@ import lombok.Getter;
 @AllArgsConstructor
 public class SigunguResponse {
 
+    private Long regionId;
     private String sigunguCode;
     private String sigunguName;
 }
