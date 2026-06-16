@@ -1,6 +1,8 @@
 package com.example.butim.domain.user.service;
 
+import com.example.butim.domain.accident.repository.AccidentInfoRepository;
 import com.example.butim.domain.auth.service.PhoneVerificationService;
+import com.example.butim.domain.financial.repository.FinancialInfoRepository;
 import com.example.butim.domain.prediction.entity.Prediction;
 import com.example.butim.domain.prediction.repository.PredictionRepository;
 import com.example.butim.domain.strategy.entity.StrategyItem;
@@ -9,6 +11,7 @@ import com.example.butim.domain.strategy.enums.StrategyItemType;
 import com.example.butim.domain.strategy.repository.StrategyItemRepository;
 import com.example.butim.domain.strategy.repository.StrategyResultRepository;
 import com.example.butim.domain.user.dto.request.UpdateUserRequest;
+import com.example.butim.domain.user.dto.response.UserCurrentStepResponse;
 import com.example.butim.domain.user.dto.response.UserMainResponse;
 import com.example.butim.domain.user.dto.response.UserMeResponse;
 import com.example.butim.domain.user.entity.User;
@@ -32,6 +35,8 @@ public class UserService {
     private final PredictionRepository predictionRepository;
     private final StrategyResultRepository strategyResultRepository;
     private final StrategyItemRepository strategyItemRepository;
+    private final AccidentInfoRepository accidentInfoRepository;
+    private final FinancialInfoRepository financialInfoRepository;
 
     @Transactional(readOnly = true)
     public UserMeResponse getMe(Long userId) {
@@ -103,5 +108,22 @@ public class UserService {
                 hasSupportItems,
                 hasLoanItems
         );
+    }
+
+    @Transactional(readOnly = true)
+    public UserCurrentStepResponse getCurrentStep(Long userId) {
+        if (!accidentInfoRepository.existsByUserId(userId)) {
+            return new UserCurrentStepResponse("accident");
+        }
+        if (!predictionRepository.existsByUserId(userId)) {
+            return new UserCurrentStepResponse("period");
+        }
+        if (!financialInfoRepository.existsByUserId(userId)) {
+            return new UserCurrentStepResponse("financial");
+        }
+        if (!strategyResultRepository.findTopByUserIdOrderByCreatedAtDesc(userId).isPresent()) {
+            return new UserCurrentStepResponse("strategy/recommend");
+        }
+        return new UserCurrentStepResponse("accident");
     }
 }
