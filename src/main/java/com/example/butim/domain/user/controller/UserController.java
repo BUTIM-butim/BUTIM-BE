@@ -34,7 +34,7 @@ public class UserController {
     }
 
     @Operation(summary = "메인 페이지 조회", description = "메인 페이지에 필요한 예측 기간 및 전략 정보를 반환합니다.")
-    @GetMapping("/api/users/main")
+    @GetMapping("/main")
     public ResponseEntity<BaseResponse<UserMainResponse>> getMain(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         return ResponseEntity.ok(BaseResponse.success("메인 페이지 조회에 성공했습니다.",
