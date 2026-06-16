@@ -63,7 +63,11 @@ public class StrategyService {
 
         StrategyContext context = buildContext(accidentInfo, financialInfo, prediction);
 
-        List<CandidateSupportDto> candidates = welfareApiAggregator.collectCandidates(context.regionName());
+        Region region = financialInfo.getRegion();
+        List<CandidateSupportDto> candidates = welfareApiAggregator.collectCandidates(
+                region.getSidoName(),
+                region.getSigunguName()
+        );
 
         AiStrategyResult aiResult = strategyAiService.recommend(candidates, context);
 
