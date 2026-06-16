@@ -24,13 +24,14 @@ public class WelfareApiAggregator {
         List<CandidateSupportDto> candidates = new ArrayList<>();
 
         safeAdd(candidates, "중앙부처복지서비스-의료", () -> centralWelfareApiClient.search("의료"));
+        pace();
         safeAdd(candidates, "중앙부처복지서비스-생계", () -> centralWelfareApiClient.search("생계"));
+        pace();
         safeAdd(candidates, "중앙부처복지서비스-긴급", () -> centralWelfareApiClient.search("긴급"));
+        pace();
         safeAdd(candidates, "중앙부처복지서비스-전기", () -> centralWelfareApiClient.search("전기"));
 
-        safeAdd(candidates, "지자체복지서비스-의료", () -> localWelfareApiClient.search(sidoName, sigunguName, "의료"));
-        safeAdd(candidates, "지자체복지서비스-생계", () -> localWelfareApiClient.search(sidoName, sigunguName, "생계"));
-        safeAdd(candidates, "지자체복지서비스-긴급", () -> localWelfareApiClient.search(sidoName, sigunguName, "긴급"));
+        safeAdd(candidates, "지자체복지서비스", () -> localWelfareApiClient.search(sidoName, sigunguName));
 
         safeAdd(candidates, "서민금융진흥원-대출상품", microFinanceApiClient::search);
 
@@ -45,6 +46,18 @@ public class WelfareApiAggregator {
                 ))
                 .limit(50)
                 .toList();
+    }
+
+    /**
+     * 중앙부처복지서비스 API가 짧은 시간에 연속 호출되면 429(Too Many Requests)를
+     * 반환하는 경우가 있어, 같은 호출 사이에 짧은 간격을 둔다.
+     */
+    private void pace() {
+        try {
+            Thread.sleep(400);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     private void safeAdd(
