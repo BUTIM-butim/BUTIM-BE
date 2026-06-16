@@ -2,7 +2,7 @@ package com.example.butim.domain.strategy.service;
 
 import com.example.butim.domain.strategy.dto.common.AiStrategyResult;
 import com.example.butim.domain.strategy.dto.common.CandidateSupportDto;
-import com.example.butim.domain.strategy.dto.request.StrategyRunRequest;
+import com.example.butim.domain.strategy.dto.common.StrategyContext;
 import com.example.butim.domain.strategy.openai.OpenAiClient;
 import com.example.butim.global.exception.CustomException;
 import com.example.butim.global.exception.ErrorCode;
@@ -20,8 +20,8 @@ public class StrategyAiService {
     private final ObjectMapper objectMapper;
 
     public AiStrategyResult recommend(
-            StrategyRunRequest request,
-            List<CandidateSupportDto> candidates
+            List<CandidateSupportDto> candidates,
+            StrategyContext context
     ) {
         String systemPrompt = """
                 너는 산재 승인 대기 중인 사용자를 위한 현금흐름 대응 전략 추천 엔진이다.
@@ -79,33 +79,23 @@ public class StrategyAiService {
                 - 고용형태: %s
                 - 현재 자산: %d원
                 - 월 생활비: %d원
-                - 월 소득: %s원
-                - 가구원 수: %s
                 - 현금 공백 발생일: D-%d
                 - 산재 승인 예상일: D-%d
                 - 산재 지급 예상일: D-%d
-                - 산재 예상 수령액: %s원
-                - 병원비: %s원
-                - 보험금: %s원
-                
+
                 후보 지원금/대출 목록:
                 %s
                 """.formatted(
-                value(request.regionCode()),
-                value(request.regionName()),
-                value(request.injuryName()),
-                value(request.jobType()),
-                value(request.employmentType()),
-                request.currentAsset(),
-                request.monthlyLivingCost(),
-                value(request.monthlyIncome()),
-                value(request.householdSize()),
-                request.cashGapDay(),
-                request.approvalExpectedDays(),
-                request.paymentExpectedDays(),
-                value(request.expectedWorkersCompensationAmount()),
-                value(request.hospitalCost()),
-                value(request.insuranceAmount()),
+                value(context.regionCode()),
+                value(context.regionName()),
+                value(context.injuryName()),
+                value(context.jobType()),
+                value(context.employmentType()),
+                context.currentAsset(),
+                context.monthlyLivingCost(),
+                context.cashGapDay(),
+                context.approvalExpectedDays(),
+                context.paymentExpectedDays(),
                 toJson(candidates)
         );
 

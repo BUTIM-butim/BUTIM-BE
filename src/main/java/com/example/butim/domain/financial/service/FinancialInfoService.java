@@ -50,7 +50,6 @@ public class FinancialInfoService {
                 .childCount(normalizeChildCount(request))
                 .isPregnant(request.getIsPregnant())
                 .hasDisability(request.getHasDisability())
-                .disabilityGrade(normalizeDisabilityGrade(request))
                 .currentEmploymentStatus(request.getCurrentEmploymentStatus())
                 .build();
 
@@ -88,7 +87,6 @@ public class FinancialInfoService {
                 normalizeChildCount(request),
                 request.getIsPregnant(),
                 request.getHasDisability(),
-                normalizeDisabilityGrade(request),
                 request.getCurrentEmploymentStatus()
         );
 
@@ -105,18 +103,6 @@ public class FinancialInfoService {
         }
 
         return request.getChildCount();
-    }
-
-    private Integer normalizeDisabilityGrade(FinancialInfoRequest request) {
-        if (Boolean.FALSE.equals(request.getHasDisability())) {
-            return 0;
-        }
-
-        if (request.getDisabilityGrade() == null) {
-            return 0;
-        }
-
-        return request.getDisabilityGrade();
     }
 
     private User getUser(Long userId) {

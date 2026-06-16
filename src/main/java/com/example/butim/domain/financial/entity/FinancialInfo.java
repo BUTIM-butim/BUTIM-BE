@@ -76,10 +76,6 @@ public class FinancialInfo {
     @Column(name = "has_disability", nullable = false)
     private Boolean hasDisability;
 
-    // 장애 등급
-    @Column(name = "disability_grade")
-    private Integer disabilityGrade;
-
     // 현재 고용 상태
     @Enumerated(EnumType.STRING)
     @Column(name = "current_employment_status", nullable = false)
@@ -102,7 +98,6 @@ public class FinancialInfo {
             Integer childCount,
             Boolean isPregnant,
             Boolean hasDisability,
-            Integer disabilityGrade,
             EmploymentStatus currentEmploymentStatus
     ) {
         this.region = region;
@@ -115,7 +110,6 @@ public class FinancialInfo {
         this.childCount = childCount;
         this.isPregnant = isPregnant;
         this.hasDisability = hasDisability;
-        this.disabilityGrade = disabilityGrade;
         this.currentEmploymentStatus = currentEmploymentStatus;
     }
 
@@ -128,10 +122,6 @@ public class FinancialInfo {
         if (this.childCount == null) {
             this.childCount = 0;
         }
-
-        if (this.disabilityGrade == null) {
-            this.disabilityGrade = 0;
-        }
     }
 
     @PreUpdate
@@ -140,10 +130,6 @@ public class FinancialInfo {
 
         if (this.childCount == null) {
             this.childCount = 0;
-        }
-
-        if (this.disabilityGrade == null) {
-            this.disabilityGrade = 0;
         }
     }
 }
