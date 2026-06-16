@@ -1,6 +1,7 @@
 package com.example.butim.domain.user.controller;
 
 import com.example.butim.domain.user.dto.request.UpdateUserRequest;
+import com.example.butim.domain.user.dto.response.UserCurrentStepResponse;
 import com.example.butim.domain.user.dto.response.UserMainResponse;
 import com.example.butim.domain.user.dto.response.UserMeResponse;
 import com.example.butim.domain.user.service.UserService;
@@ -39,6 +40,14 @@ public class UserController {
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         return ResponseEntity.ok(BaseResponse.success("메인 페이지 조회에 성공했습니다.",
                 userService.getMain(userDetails.getUserId())));
+    }
+
+    @Operation(summary = "현재 진행 단계 조회", description = "사용자의 현재 진행 단계를 반환합니다.")
+    @GetMapping("/current-step")
+    public ResponseEntity<BaseResponse<UserCurrentStepResponse>> getCurrentStep(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ResponseEntity.ok(BaseResponse.success("현재 단계 조회에 성공했습니다.",
+                userService.getCurrentStep(userDetails.getUserId())));
     }
 
     @Operation(summary = "내 정보 수정", description = "이름, 이메일, 비밀번호, 전화번호를 수정합니다. 전화번호 변경 시 인증 필요. 약관 동의 필수.")
