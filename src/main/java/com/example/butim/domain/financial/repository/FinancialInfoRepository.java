@@ -11,4 +11,6 @@ public interface FinancialInfoRepository extends JpaRepository<FinancialInfo, Lo
     Optional<FinancialInfo> findByUser(User user);
 
     boolean existsByUser(User user);
+
+    boolean existsByUserId(Long userId);
 }
