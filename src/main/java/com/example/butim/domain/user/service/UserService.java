@@ -81,26 +81,25 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public UserMainResponse getMain(Long userId) {
-        Prediction prediction = predictionRepository.findByUserId(userId)
-                .orElseThrow(() -> new CustomException(ErrorCode.PREDICTION_NOT_FOUND));
+        Prediction prediction = predictionRepository.findByUserId(userId).orElse(null);
 
-        StrategyResult strategyResult = strategyResultRepository.findTopByUserIdOrderByCreatedAtDesc(userId)
-                .orElseThrow(() -> new CustomException(ErrorCode.STRATEGY_NOT_FOUND));
+        StrategyResult strategyResult = strategyResultRepository
+                .findTopByUserIdOrderByCreatedAtDesc(userId).orElse(null);
 
-        List<StrategyItem> items = strategyItemRepository.findByStrategyResultIdOrderByIdAsc(strategyResult.getId());
-
-        boolean hasSupportItems = items.stream()
-                .anyMatch(item -> item.getItemType() != StrategyItemType.MICRO_FINANCE_LOAN);
-
-        boolean hasLoanItems = items.stream()
-                .anyMatch(item -> item.getItemType() == StrategyItemType.MICRO_FINANCE_LOAN);
+        Boolean hasSupportItems = null;
+        Boolean hasLoanItems = null;
+        if (strategyResult != null) {
+            List<StrategyItem> items = strategyItemRepository.findByStrategyResultIdOrderByIdAsc(strategyResult.getId());
+            hasSupportItems = items.stream().anyMatch(item -> item.getItemType() != StrategyItemType.MICRO_FINANCE_LOAN);
+            hasLoanItems = items.stream().anyMatch(item -> item.getItemType() == StrategyItemType.MICRO_FINANCE_LOAN);
+        }
 
         return new UserMainResponse(
-                prediction.getPredictionMinDays(),
-                prediction.getPredictionMaxDays(),
-                prediction.getPredictionMedianDays(),
-                prediction.getPredictionMedianDays() + 14,
-                strategyResult.getPaymentExpectedDays(),
+                prediction != null ? prediction.getPredictionMinDays() : null,
+                prediction != null ? prediction.getPredictionMaxDays() : null,
+                prediction != null ? prediction.getPredictionMedianDays() : null,
+                prediction != null ? prediction.getPredictionMedianDays() + 14 : null,
+                strategyResult != null ? strategyResult.getPaymentExpectedDays() : null,
                 hasSupportItems,
                 hasLoanItems
         );
