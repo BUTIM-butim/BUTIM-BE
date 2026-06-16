@@ -31,6 +31,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
@@ -65,7 +66,10 @@ public class StrategyService {
 
         List<CandidateSupportDto> candidates = welfareApiAggregator.collectCandidates(context.regionName());
 
-        AiStrategyResult aiResult = strategyAiService.recommend(candidates, context);
+        AiStrategyResult aiResult = enforceWelfareCoverage(
+                strategyAiService.recommend(candidates, context),
+                candidates
+        );
 
         StrategyResult result = StrategyResult.builder()
                 .userId(request.userId())
@@ -344,6 +348,143 @@ public class StrategyService {
                 )
                 .findFirst()
                 .orElse(null);
+    }
+
+    /**
+     * AI가 두 전략 모두에 지원금(복지서비스)을 최소 1개 이상, 서로 다르게 포함하도록
+     * 프롬프트로 안내하지만 강제되지 않으므로, 후보 목록을 기준으로 직접 보정한다.
+     */
+    private AiStrategyResult enforceWelfareCoverage(
+            AiStrategyResult aiResult,
+            List<CandidateSupportDto> candidates
+    ) {
+        if (aiResult.strategies() == null || aiResult.strategies().size() != 2) {
+            return aiResult;
+        }
+
+        List<CandidateSupportDto> welfareCandidates = candidates.stream()
+                .filter(candidate -> candidate.itemType() != StrategyItemType.MICRO_FINANCE_LOAN)
+                .toList();
+
+        if (welfareCandidates.isEmpty()) {
+            return aiResult;
+        }
+
+        AiStrategyPlan strategy1 = findPlan(aiResult, "STRATEGY_1");
+        AiStrategyPlan strategy2 = findPlan(aiResult, "STRATEGY_2");
+
+        if (strategy1 == null || strategy2 == null) {
+            return aiResult;
+        }
+
+        CandidateSupportDto welfare1 = findWelfareItem(strategy1, candidates);
+        CandidateSupportDto welfare2 = findWelfareItem(strategy2, candidates);
+
+        AiStrategyPlan fixedStrategy1 = strategy1;
+        AiStrategyPlan fixedStrategy2 = strategy2;
+
+        if (welfare1 == null) {
+            CandidateSupportDto pick = pickWelfareCandidate(welfareCandidates, welfare2);
+            fixedStrategy1 = withAppendedItem(strategy1, pick);
+            welfare1 = pick;
+        }
+
+        if (welfare2 == null) {
+            CandidateSupportDto pick = pickWelfareCandidate(welfareCandidates, welfare1);
+            fixedStrategy2 = withAppendedItem(strategy2, pick);
+        } else if (welfareCandidates.size() > 1 && sameCandidate(welfare1, welfare2)) {
+            CandidateSupportDto alt = pickWelfareCandidate(welfareCandidates, welfare1);
+
+            if (alt != null && !sameCandidate(alt, welfare2)) {
+                fixedStrategy2 = withAppendedItem(strategy2, alt);
+            }
+        }
+
+        return new AiStrategyResult(aiResult.summary(), List.of(fixedStrategy1, fixedStrategy2));
+    }
+
+    private AiStrategyPlan findPlan(AiStrategyResult aiResult, String strategyType) {
+        return aiResult.strategies().stream()
+                .filter(plan -> strategyType.equals(plan.strategyType()))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private CandidateSupportDto findWelfareItem(
+            AiStrategyPlan plan,
+            List<CandidateSupportDto> candidates
+    ) {
+        if (plan.items() == null) {
+            return null;
+        }
+
+        for (AiStrategyPlan.AiStrategyItem item : plan.items()) {
+            CandidateSupportDto matched = findCandidate(candidates, item.externalId(), item.itemName());
+
+            boolean isWelfare = matched != null
+                    ? matched.itemType() != StrategyItemType.MICRO_FINANCE_LOAN
+                    : !"MICRO_FINANCE_LOAN".equals(item.itemType());
+
+            if (isWelfare) {
+                return matched;
+            }
+        }
+
+        return null;
+    }
+
+    private CandidateSupportDto pickWelfareCandidate(
+            List<CandidateSupportDto> welfareCandidates,
+            CandidateSupportDto avoid
+    ) {
+        if (avoid != null) {
+            for (CandidateSupportDto candidate : welfareCandidates) {
+                if (!sameCandidate(candidate, avoid)) {
+                    return candidate;
+                }
+            }
+        }
+
+        return welfareCandidates.get(0);
+    }
+
+    private boolean sameCandidate(CandidateSupportDto a, CandidateSupportDto b) {
+        if (a == null || b == null) {
+            return false;
+        }
+
+        if (a.externalId() != null && a.externalId().equals(b.externalId())) {
+            return true;
+        }
+
+        return a.name() != null && a.name().equals(b.name());
+    }
+
+    private AiStrategyPlan withAppendedItem(AiStrategyPlan plan, CandidateSupportDto candidate) {
+        if (candidate == null) {
+            return plan;
+        }
+
+        List<AiStrategyPlan.AiStrategyItem> items = new ArrayList<>(
+                plan.items() == null ? List.of() : plan.items()
+        );
+
+        if (items.size() >= 4) {
+            items.remove(items.size() - 1);
+        }
+
+        items.add(new AiStrategyPlan.AiStrategyItem(
+                candidate.externalId(),
+                candidate.name(),
+                candidate.itemType().name(),
+                candidate.expectedAmount(),
+                Boolean.TRUE.equals(candidate.repaymentRequired()),
+                Boolean.TRUE.equals(candidate.overlapsWithWorkersCompensation()),
+                candidate.expectedReceiveDay(),
+                "지원금은 모든 전략에 기본으로 포함되는 항목입니다."
+        ));
+
+        return new AiStrategyPlan(plan.strategyType(), plan.title(), plan.summary(), items);
     }
 
     private List<StrategyCardDto> toStrategyCards(List<StrategyItem> items) {
