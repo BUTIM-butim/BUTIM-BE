@@ -31,7 +31,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
@@ -66,10 +65,7 @@ public class StrategyService {
 
         List<CandidateSupportDto> candidates = welfareApiAggregator.collectCandidates(context.regionName());
 
-        AiStrategyResult aiResult = enforceWelfareCoverage(
-                strategyAiService.recommend(candidates, context),
-                candidates
-        );
+        AiStrategyResult aiResult = strategyAiService.recommend(candidates, context);
 
         StrategyResult result = StrategyResult.builder()
                 .userId(request.userId())
@@ -350,185 +346,6 @@ public class StrategyService {
                 .orElse(null);
     }
 
-    private static final int MIN_WELFARE_ITEMS_PER_STRATEGY = 2;
-    private static final int MAX_ITEMS_PER_STRATEGY = 4;
-
-    /**
-     * AI가 두 전략 모두에 지원금(복지서비스)을 가능한 한 여러 개, 서로 다르게 포함하도록
-     * 프롬프트로 안내하지만 강제되지 않으므로, 후보 목록을 기준으로 직접 보정한다.
-     */
-    private AiStrategyResult enforceWelfareCoverage(
-            AiStrategyResult aiResult,
-            List<CandidateSupportDto> candidates
-    ) {
-        if (aiResult.strategies() == null || aiResult.strategies().size() != 2) {
-            return aiResult;
-        }
-
-        List<CandidateSupportDto> welfareCandidates = candidates.stream()
-                .filter(candidate -> candidate.itemType() != StrategyItemType.MICRO_FINANCE_LOAN)
-                .toList();
-
-        if (welfareCandidates.isEmpty()) {
-            return aiResult;
-        }
-
-        AiStrategyPlan strategy1 = findPlan(aiResult, "STRATEGY_1");
-        AiStrategyPlan strategy2 = findPlan(aiResult, "STRATEGY_2");
-
-        if (strategy1 == null || strategy2 == null) {
-            return aiResult;
-        }
-
-        List<CandidateSupportDto> welfare1 = new ArrayList<>(findWelfareItems(strategy1, candidates));
-        List<CandidateSupportDto> welfare2 = new ArrayList<>(findWelfareItems(strategy2, candidates));
-
-        int target = Math.min(MIN_WELFARE_ITEMS_PER_STRATEGY, welfareCandidates.size());
-
-        AiStrategyPlan fixedStrategy1 = strategy1;
-        AiStrategyPlan fixedStrategy2 = strategy2;
-
-        while (welfare1.size() < target) {
-            CandidateSupportDto pick = pickWelfareCandidate(welfareCandidates, welfare1, welfare2);
-            if (pick == null) break;
-
-            fixedStrategy1 = withAppendedItem(fixedStrategy1, pick);
-            welfare1.add(pick);
-        }
-
-        while (welfare2.size() < target) {
-            CandidateSupportDto pick = pickWelfareCandidate(welfareCandidates, welfare2, welfare1);
-            if (pick == null) break;
-
-            fixedStrategy2 = withAppendedItem(fixedStrategy2, pick);
-            welfare2.add(pick);
-        }
-
-        if (welfareCandidates.size() > target && sameWelfareSet(welfare1, welfare2)) {
-            CandidateSupportDto alt = pickWelfareCandidate(welfareCandidates, welfare2, List.of());
-
-            if (alt != null) {
-                fixedStrategy2 = withAppendedItem(fixedStrategy2, alt);
-            }
-        }
-
-        return new AiStrategyResult(aiResult.summary(), List.of(fixedStrategy1, fixedStrategy2));
-    }
-
-    private AiStrategyPlan findPlan(AiStrategyResult aiResult, String strategyType) {
-        return aiResult.strategies().stream()
-                .filter(plan -> strategyType.equals(plan.strategyType()))
-                .findFirst()
-                .orElse(null);
-    }
-
-    private List<CandidateSupportDto> findWelfareItems(
-            AiStrategyPlan plan,
-            List<CandidateSupportDto> candidates
-    ) {
-        if (plan.items() == null) {
-            return List.of();
-        }
-
-        List<CandidateSupportDto> result = new ArrayList<>();
-
-        for (AiStrategyPlan.AiStrategyItem item : plan.items()) {
-            CandidateSupportDto matched = findCandidate(candidates, item.externalId(), item.itemName());
-
-            boolean isWelfare = matched != null
-                    ? matched.itemType() != StrategyItemType.MICRO_FINANCE_LOAN
-                    : !"MICRO_FINANCE_LOAN".equals(item.itemType());
-
-            if (isWelfare && matched != null) {
-                result.add(matched);
-            }
-        }
-
-        return result;
-    }
-
-    private CandidateSupportDto pickWelfareCandidate(
-            List<CandidateSupportDto> welfareCandidates,
-            List<CandidateSupportDto> usedBySelf,
-            List<CandidateSupportDto> preferAvoid
-    ) {
-        for (CandidateSupportDto candidate : welfareCandidates) {
-            boolean usedAlready = containsCandidate(usedBySelf, candidate);
-            boolean avoided = containsCandidate(preferAvoid, candidate);
-
-            if (!usedAlready && !avoided) {
-                return candidate;
-            }
-        }
-
-        for (CandidateSupportDto candidate : welfareCandidates) {
-            if (!containsCandidate(usedBySelf, candidate)) {
-                return candidate;
-            }
-        }
-
-        return null;
-    }
-
-    private boolean containsCandidate(List<CandidateSupportDto> list, CandidateSupportDto target) {
-        return list.stream().anyMatch(candidate -> sameCandidate(candidate, target));
-    }
-
-    private boolean sameWelfareSet(List<CandidateSupportDto> a, List<CandidateSupportDto> b) {
-        if (a.size() != b.size()) {
-            return false;
-        }
-
-        return a.stream().allMatch(candidate -> containsCandidate(b, candidate));
-    }
-
-    private boolean sameCandidate(CandidateSupportDto a, CandidateSupportDto b) {
-        if (a == null || b == null) {
-            return false;
-        }
-
-        if (a.externalId() != null && a.externalId().equals(b.externalId())) {
-            return true;
-        }
-
-        return a.name() != null && a.name().equals(b.name());
-    }
-
-    private AiStrategyPlan withAppendedItem(AiStrategyPlan plan, CandidateSupportDto candidate) {
-        if (candidate == null) {
-            return plan;
-        }
-
-        List<AiStrategyPlan.AiStrategyItem> items = new ArrayList<>(
-                plan.items() == null ? List.of() : plan.items()
-        );
-
-        if (items.size() >= MAX_ITEMS_PER_STRATEGY) {
-            int loanIndex = -1;
-
-            for (int i = items.size() - 1; i >= 0; i--) {
-                if ("MICRO_FINANCE_LOAN".equals(items.get(i).itemType())) {
-                    loanIndex = i;
-                    break;
-                }
-            }
-
-            items.remove(loanIndex >= 0 ? loanIndex : items.size() - 1);
-        }
-
-        items.add(new AiStrategyPlan.AiStrategyItem(
-                candidate.externalId(),
-                candidate.name(),
-                candidate.itemType().name(),
-                candidate.expectedAmount(),
-                Boolean.TRUE.equals(candidate.repaymentRequired()),
-                Boolean.TRUE.equals(candidate.overlapsWithWorkersCompensation()),
-                candidate.expectedReceiveDay(),
-                "지원금은 모든 전략에 기본으로 포함되는 항목입니다."
-        ));
-
-        return new AiStrategyPlan(plan.strategyType(), plan.title(), plan.summary(), items);
-    }
 
     private List<StrategyCardDto> toStrategyCards(List<StrategyItem> items) {
         return List.of(
