@@ -38,6 +38,7 @@ public class RegionService {
         return regionRepository.findBySidoCodeAndSigunguCodeIsNotNullOrderBySigunguNameAsc(sidoCode)
                 .stream()
                 .map(region -> new SigunguResponse(
+                        region.getRegionId(),
                         region.getSigunguCode(),
                         region.getSigunguName()
                 ))
