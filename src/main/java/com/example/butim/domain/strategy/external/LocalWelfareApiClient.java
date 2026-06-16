@@ -36,7 +36,7 @@ public class LocalWelfareApiClient {
     @Value("${external.local-welfare.list-path}")
     private String listPath;
 
-    public List<CandidateSupportDto> search(String regionName, String keyword) {
+    public List<CandidateSupportDto> search(String sidoName, String sigunguName, String keyword) {
         try {
             WebClient webClient = webClientBuilder
                     .baseUrl(baseUrl)
@@ -50,8 +50,12 @@ public class LocalWelfareApiClient {
                                 .queryParam("pageNo", pageNo)
                                 .queryParam("numOfRows", numOfRows);
 
-                        if (regionName != null && !regionName.isBlank()) {
-                            builder.queryParam("ctpvNm", regionName);
+                        if (sidoName != null && !sidoName.isBlank()) {
+                            builder.queryParam("ctpvNm", sidoName);
+                        }
+
+                        if (sigunguName != null && !sigunguName.isBlank()) {
+                            builder.queryParam("sggNm", sigunguName);
                         }
 
                         return builder.build();
@@ -73,9 +77,10 @@ public class LocalWelfareApiClient {
                     .toList();
 
             log.info(
-                    "지자체복지서비스 파싱 결과: 전체 {}건, regionName={}, keyword={} 필터링 후 {}건",
+                    "지자체복지서비스 파싱 결과: 전체 {}건, sidoName={}, sigunguName={}, keyword={} 필터링 후 {}건",
                     parsedItems.size(),
-                    regionName,
+                    sidoName,
+                    sigunguName,
                     keyword,
                     filteredItems.size()
             );
@@ -84,10 +89,11 @@ public class LocalWelfareApiClient {
 
         } catch (Exception e) {
             log.error(
-                    "지자체복지서비스 API 조회 실패. baseUrl={}, listPath={}, regionName={}, keyword={}",
+                    "지자체복지서비스 API 조회 실패. baseUrl={}, listPath={}, sidoName={}, sigunguName={}, keyword={}",
                     baseUrl,
                     listPath,
-                    regionName,
+                    sidoName,
+                    sigunguName,
                     keyword,
                     e
             );
