@@ -29,16 +29,16 @@ public class StrategyAiService {
                 
                 규칙:
                 1. 전략은 정확히 2개를 만든다.
-                2. STRATEGY_1(가장 빠르게 받을 수 있는 전략)은 후보 목록 중 expectedReceiveDay(지급까지 걸리는 기간)가 가장 짧은 항목들을 우선으로 선택해서 구성한다. 후보들을 expectedReceiveDay 오름차순으로 정렬했을 때 앞쪽에 있는 항목들을 선택한다고 생각하면 된다. 상환 의무가 있는 대출은 상환 부담을 늘리므로, 같은 빠르기라면 복지서비스(지원금)를 대출보다 우선한다.
-                3. STRATEGY_2(가장 많이 받을 수 있는 전략)는 저금리 대출과 지원금을 모두 포함해서 총 수령액(expectedAmount 합계)이 최대가 되도록 후보를 선택한다. 지급까지 기간은 고려하지 않는다.
+                2. STRATEGY_1(가장 빠르게 받을 수 있는 전략)은 복지서비스(CENTRAL_WELFARE, LOCAL_WELFARE) 항목만 포함한다. 대출(MICRO_FINANCE_LOAN)은 절대 포함하지 않는다. 후보 복지서비스 중 expectedReceiveDay가 짧은 순으로 최대 4개를 선택한다.
+                3. STRATEGY_2(가장 많이 받을 수 있는 전략)는 복지서비스와 저금리 대출을 모두 포함해 총 수령액(expectedAmount 합계)이 최대가 되도록 구성한다. 복지서비스는 STRATEGY_1에서 선택하지 않은 항목들 중에서 고른다. 대출(MICRO_FINANCE_LOAN)은 STRATEGY_2에만 포함한다.
                 4. 후보 목록에 없는 지원금이나 대출은 절대 만들지 않는다.
                 5. 대출 상품은 itemType을 MICRO_FINANCE_LOAN으로 둔다.
                 6. 대출 상품은 repaymentRequired를 true로 둔다.
                 7. 복지서비스(itemType이 CENTRAL_WELFARE 또는 LOCAL_WELFARE)는 repaymentRequired를 false로 둔다.
                 8. 산재보험과 중복 가능성이 있어 보이면 overlapsWithWorkersCompensation을 true로 둔다.
                 9. expectedReceiveDay는 오늘 기준 며칠 뒤 받을 수 있는지를 의미하는 숫자다.
-                10. 전략별 items는 후보 목록 안에서 위 2, 3번 기준에 맞는 항목을 가능한 한 모두 포함한다(최소 2개, 최대 4개). 후보가 한 개뿐이라면 그 한 개만 포함한다.
-                11. STRATEGY_1과 STRATEGY_2의 items에 동일한 externalId가 중복으로 들어가서는 안 된다. 같은 항목이 두 전략 모두에 포함되면 절대 안 된다. 각 항목은 두 전략 중 한 곳에만 배치한다. STRATEGY_1은 빠른 항목 우선, STRATEGY_2는 나머지 중 총액이 큰 항목으로 구성한다.
+                10. 전략별 items는 최소 1개 이상 포함한다. 후보가 없는 경우에만 빈 배열을 허용한다.
+                11. 복지서비스(CENTRAL_WELFARE, LOCAL_WELFARE) 항목의 externalId는 두 전략에 중복으로 들어갈 수 없다. 각 복지서비스 항목은 STRATEGY_1 또는 STRATEGY_2 중 하나에만 배치한다.
                 
                 반환 JSON 형식:
                 {
