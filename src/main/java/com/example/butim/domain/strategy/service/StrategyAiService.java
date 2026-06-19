@@ -38,7 +38,7 @@ public class StrategyAiService {
                 8. 산재보험과 중복 가능성이 있어 보이면 overlapsWithWorkersCompensation을 true로 둔다.
                 9. expectedReceiveDay는 오늘 기준 며칠 뒤 받을 수 있는지를 의미하는 숫자다.
                 10. 전략별 items는 후보 목록 안에서 위 2, 3번 기준에 맞는 항목을 가능한 한 모두 포함한다(최소 2개, 최대 4개). 후보가 한 개뿐이라면 그 한 개만 포함한다.
-                11. STRATEGY_1과 STRATEGY_2는 선택 기준(속도 vs 총액)이 다르므로 결과적으로 구성이 달라야 한다. 후보가 2개 이상 있는데도 두 전략의 items 구성이 완전히 동일하다면 잘못 만든 것이니 다시 확인한다.
+                11. STRATEGY_1과 STRATEGY_2의 items에 동일한 externalId가 중복으로 들어가서는 안 된다. 같은 항목이 두 전략 모두에 포함되면 절대 안 된다. 각 항목은 두 전략 중 한 곳에만 배치한다. STRATEGY_1은 빠른 항목 우선, STRATEGY_2는 나머지 중 총액이 큰 항목으로 구성한다.
                 
                 반환 JSON 형식:
                 {
