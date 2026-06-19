@@ -32,7 +32,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -281,6 +283,8 @@ public class StrategyService {
             throw new CustomException(ErrorCode.AI_RESPONSE_PARSE_FAILED);
         }
 
+        Set<String> usedExternalIds = new HashSet<>();
+
         return aiResult.strategies().stream()
                 .flatMap(plan -> {
                     StrategyType strategyType = parseStrategyType(plan.strategyType());
@@ -290,6 +294,10 @@ public class StrategyService {
                     }
 
                     return plan.items().stream()
+                            .filter(item -> {
+                                String key = item.externalId() != null ? item.externalId() : item.itemName();
+                                return usedExternalIds.add(key);
+                            })
                             .map(item -> {
                                 CandidateSupportDto candidate = findCandidate(
                                         candidates,
