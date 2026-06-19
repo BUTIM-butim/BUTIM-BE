@@ -295,6 +295,10 @@ public class StrategyService {
 
                     return plan.items().stream()
                             .filter(item -> {
+                                StrategyItemType type = parseItemType(item.itemType());
+                                if (type == StrategyItemType.MICRO_FINANCE_LOAN) {
+                                    return true;
+                                }
                                 String key = item.externalId() != null ? item.externalId() : item.itemName();
                                 return usedExternalIds.add(key);
                             })
