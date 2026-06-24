@@ -22,10 +22,15 @@ public class CashflowCalculator {
     ) {
         List<CashflowSnapshot> snapshots = new ArrayList<>();
 
+        snapshots.addAll(createBaselineSnapshots(result));
         snapshots.addAll(createSnapshotsByStrategy(result, StrategyType.STRATEGY_1, items));
         snapshots.addAll(createSnapshotsByStrategy(result, StrategyType.STRATEGY_2, items));
 
         return snapshots;
+    }
+
+    private List<CashflowSnapshot> createBaselineSnapshots(StrategyResult result) {
+        return createSnapshots(result, null, List.of(), List.of(), List.of());
     }
 
     public List<CashflowSnapshot> recalculateSelectedStrategy(
@@ -57,7 +62,7 @@ public class CashflowCalculator {
 
     private List<CashflowSnapshot> createSnapshots(
             StrategyResult result,
-            StrategyType strategyType,
+            StrategyType strategyType,  // null이면 BASELINE
             List<StrategyItem> items,
             List<Long> appliedItemIds,
             List<Long> receivedItemIds
