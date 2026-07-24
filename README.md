@@ -4,7 +4,8 @@
 웹 기반 산재 신청 승인 기간 예측 및 소득 공백 대응 AI 서비스
 
 ## 프로젝트 구조
-'''📦src
+'''
+📦src
  ┣ 📂main
  ┃ ┣ 📂java
  ┃ ┃ ┗ 📂com
@@ -236,4 +237,5 @@
  ┃ ┃ ┗ 📂com
  ┃ ┃ ┃ ┗ 📂example
  ┃ ┃ ┃ ┃ ┗ 📂butim
- ┃ ┃ ┃ ┃ ┃ ┗ 📜ButimApplicationTests.java'''
+ ┃ ┃ ┃ ┃ ┃ ┗ 📜ButimApplicationTests.java
+ '''
